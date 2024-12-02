@@ -1,0 +1,78 @@
+---
+const nav = [
+    { name: 'About', href: '/#about' },
+    { name: 'Focus Areas', href: '/#focus-areas' },
+    { name: 'Consultations', href: '/#consultation' },
+    { name: 'Contact', href: '/#contact' },
+];
+---
+
+<header
+    class="
+        py-3 fixed top-0 left-0 w-full z-10 transition-all duration-500
+        [&.scrolled.scrolling-down]:translate-y-[-6rem] [&.scrolled]:bg-black
+        [&.header-open_nav]:block [&.header-open_.open-menu]:hidden [&.header-open_.close-menu]:block
+    "
+    id="header"
+>
+    <div class="wrapper flex justify-between items-center">
+        <div class="">
+            <a href="/">
+                <img
+                    src="/images/clickhouse-logo.svg"
+                    class="w-full"
+                    alt="ClickHouse logo"
+                    loading="eager"
+                    fetchpriority="high"
+                    width="60"
+                    height="60"
+                />
+            </a>
+        </div>
+
+        <nav class="
+            hidden md:block fixed top-[4.2rem] left-0 w-full pt-4
+            min-h-[100vh] max-h-[calc(100vh-4.2rem)] bg-black md:bg-transparent overflow-auto
+            md:min-h-[0] md:top-none md:static md:overflow-visible md:pt-0
+        ">
+            <ul class="
+                list-none flex flex-col gap-6 md:gap-10 md:flex-row flex-wrap m-0
+                justify-end items-center
+            ">
+                {nav.map((loop) => (
+                    <li>
+                        <a
+                            href={loop.href}
+                            class="
+                                text-white hover:text-orange transition-colors
+                                hover:no-underline relative no-underline
+                                after:w-full after:h-[1px] after:absolute after:bottom-[-0.5rem]
+                                after:left-0 after:bg-white after:hidden hover:after:block
+                            "
+                        >
+                            {loop.name}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+
+        <button
+            id="menu-button"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-haspopup="true"
+            class="md:hidden"
+        >
+            <svg class="open-menu" width="20px" height="20px" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none">
+                <path fill="#000000" fill-rule="evenodd" d="M19 4a1 1 0 01-1 1H2a1 1 0 010-2h16a1 1 0 011 1zm0 6a1 1 0 01-1 1H2a1 1 0 110-2h16a1 1 0 011 1zm-1 7a1 1 0 100-2H2a1 1 0 100 2h16z"/>
+            </svg>
+
+            <svg class="hidden close-menu" width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20.7457 3.32851C20.3552 2.93798 19.722 2.93798 19.3315 3.32851L12.0371 10.6229L4.74275 3.32851C4.35223 2.93798 3.71906 2.93798 3.32854 3.32851C2.93801 3.71903 2.93801 4.3522 3.32854 4.74272L10.6229 12.0371L3.32856 19.3314C2.93803 19.722 2.93803 20.3551 3.32856 20.7457C3.71908 21.1362 4.35225 21.1362 4.74277 20.7457L12.0371 13.4513L19.3315 20.7457C19.722 21.1362 20.3552 21.1362 20.7457 20.7457C21.1362 20.3551 21.1362 19.722 20.7457 19.3315L13.4513 12.0371L20.7457 4.74272C21.1362 4.3522 21.1362 3.71903 20.7457 3.32851Z" fill="#0F0F0F"/>
+            </svg>
+        </button>
+    </div>
+</header>
+
+<script src="/scripts/header.js" async defer is:inline />

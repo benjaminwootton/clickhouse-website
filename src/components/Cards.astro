@@ -1,0 +1,72 @@
+---
+// Imports
+import { Picture } from 'astro:assets';
+
+// Components
+import Button from "components/Button.astro";
+
+const { cards, image, imageAlt, black } = Astro.props;
+
+interface Props {
+    image?: any,
+    imageAlt?: string,
+    black?: boolean,
+    cards: Array<{
+        title: string,
+        description: string,
+        image?: string,
+        imageAlt?: string,
+        buttonText?: string,
+        buttonLink?: string,
+    }>,
+}
+---
+
+<section class={`
+    ${black ? 'bg-black text-white' : 'bg-light-blue'}
+`}>
+    <div class="wrapper rounded-2xl py-10 px-4 md:py-14 md:px-12">
+        <div class="mb-12">
+            <div class="max-w-[45rem]">
+                <slot />
+            </div>
+
+            {image &&
+                <Picture
+                    src={image}
+                    alt={imageAlt ? imageAlt : ''}
+                    class="mt-8"
+                />
+            }
+        </div>
+
+        <div class="grid grid lg:grid-cols-3 gap-8">
+            {cards?.map((loop) => (
+                <div class={`
+                    flex flex-col justify-between
+                    ${black ? '' : 'bg-white rounded-2xl p-6'}
+                `}>
+                    <div>
+                        {loop.image &&
+                            <img
+                                src={loop.image}
+                                alt={loop.imageAlt ? loop.imageAlt : ''}
+                                class="mb-4 object-fit"
+                                width="48"
+                                height="48"
+                            />
+                        }
+                        <h3>{loop.title}</h3>
+                        <p>{loop.description}</p>
+                    </div>
+                    {loop.buttonText && loop.buttonLink &&
+                        <Button
+                            text={loop.buttonText}
+                            href={loop.buttonLink}
+                        />
+                    }
+                </div>
+            ))}
+        </div>
+    </div>
+</section>

@@ -1,0 +1,39 @@
+---
+interface Props {
+    text: string;
+    href?: string;
+    newTab?: boolean;
+    insertClass?: string,
+    style?: string,
+    button?: boolean,
+}
+
+const { text, href, newTab, insertClass, style, button } = Astro.props;
+
+const defaultStyle = `inline-block text-white bg-black px-8 py-3
+    rounded-md no-underline border-[1px] border-white mt-6
+    hover:bg-white hover:text-black transition-colors duration-500`;
+---
+
+{button ? 
+    <button 
+        class={`
+            ${!style ? defaultStyle : ''}
+            ${insertClass ? insertClass : ''}
+        `}
+    >
+        {text}
+    </button>
+    :
+    <a 
+        class={`
+            ${!style ? defaultStyle : ''}
+            ${insertClass ? insertClass : ''}
+        `}
+        href={href} 
+        target={newTab ? "_blank" : undefined} 
+        rel={newTab ? "noopener noreferrer" : undefined}
+    >
+        {text}
+    </a>
+}

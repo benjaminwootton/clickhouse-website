@@ -1,0 +1,70 @@
+---
+// Components
+import Page from "layouts/Page.astro";
+import Hero from "components/Hero.astro";
+import Button from "components/Button.astro";
+import Cards from "components/Cards.astro";
+import Blog from "components/Blog.astro";
+
+// Assets
+import carStreamsImage from 'assets/home/car-streams.jpg';
+---
+
+<Page
+    title="We Build Real Time Analytics Solutions Based On ClickHouse"
+	description="We help businesses design, build and run sophisticated real time analytics solutions based on ClickHouse, the fastest open source database in the market."
+>
+
+    <Hero>
+        <h1>We Build Real Time Analytics Solutions Based On ClickHouse</h1>
+        <p>We help businesses design, build and run sophisticated real time analytics solutions based on ClickHouse, the fastest open source database in the market.</p>
+        <Button text="See Our Work" href="#" />
+    </Hero>
+
+    <Cards
+        cards={[
+            {
+                image: '/images/icons/data.svg',
+                title: 'Real Time Data Warehouse',
+                description: 'Integrate data from across your business for immediately visibility of operations.  Expose analytics through self service dashboards and BI tools.',
+            }, {
+                image: '/images/icons/analytics.svg',
+                title: 'Real Time Analytics',
+                description: 'Analyse and monitor your operational business data to identify and respond to situations of interest.  Enable complex data science and machine learning use cases. ',
+            }, {
+                image: '/images/icons/applications.svg',
+                title: 'Real Time Applications',
+                description: 'Deploy real time interactive applications for your employees and user facing analytics for your customers.',
+            }, 
+        ]}
+    >
+        <h2>Expert Consultancy and Managed Services For ClickHouse</h2>
+        <p>We help clients leverage ClickHouse Cloud and ClickHouse Open Source as the engine for their data and analytics ambitions.  Our skills span cloud data engineering, data science and software engineering, deploying end to end solutions that help our clients with their most demanding analytics requirements.  </p>
+    </Cards>
+
+    <Cards
+        black
+        image={carStreamsImage}
+        cards={[
+            {
+                title: 'It’s Fast',
+                description: 'ClickHouse is the highest performing analytical database available, making it possible to query large, complex real-time datasets in milliseconds.',
+            }, {
+                title: 'It’s Cost Effective',
+                description: 'ClickHouse has an attractive and scalable cost model which has a significantly lower TCO than competitors such as Snowflake.',
+            }, {
+                title: 'It’s Simple',
+                description: 'ClickHouse Cloud offers a fully managed cloud option which requires no setup, configuration or ongoing maintenence.',
+            }, 
+        ]}
+    >
+        <h2>Why You Should Build Your Next Analytics Project With ClickHouse</h2>
+        <p>Most data and analytics platforms cannot scale to serve real time analytics and customer experiences over high volumes of freshly ingested data.  ClickHouse is unique in it’s ability to do this at a cost effective price point.  With the fully managed ClickHouse Cloud, and the flexibility of an Open Source deployment, ClickHouse is uniquely differentiated in the market.</p>
+    </Cards>
+
+    <Blog>
+        <h2>Our Thought Leadership and Resources</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus. Pellentesque vel imperdiet lectus. Aenean pharetra maximus vulputate. Vivamus non aliquet arcu. Pellentesque mi felis, mollis nec lobortis eget, efficitur vitae lorem. Phasellus consequat, mauris ac venenatis tincidunt, tellus orci sagittis ligula, ac sollicitudin velit mauris ac elit. </p>
+    </Blog>
+    
+</Page>

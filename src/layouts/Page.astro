@@ -1,0 +1,39 @@
+---
+// Components
+import Header from 'components/Layout/Header.astro';
+import Footer from 'components/Layout/Footer.astro';
+import Seo from 'components/Layout/Seo.astro';
+
+// Styles
+import 'styles/Global.scss';
+
+interface Props {
+	title: string;
+	description: string;
+    noindex?: boolean;
+}
+
+const { title, description, noindex } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<Seo
+			title={title}
+			description={description}
+			noindex={noindex}
+		/>
+	</head>
+	<body>
+
+		<Header />
+
+		<main>
+			<slot />
+		</main>
+
+		<Footer />
+
+	</body>
+</html>

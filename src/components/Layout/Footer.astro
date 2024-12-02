@@ -1,0 +1,67 @@
+---
+const nav = [
+    { name: 'About', href: '/#about' },
+    { name: 'Focus Areas', href: '/#focus-areas' },
+    { name: 'Consultations', href: '/#consultation' },
+    { name: 'Contact', href: '/#contact' },
+];
+---
+
+<footer class="mt-10 py-11 bg-light-yellow">
+    <div class="wrapper flex flex-col gap-6 items-center">
+        <div class="max-w-[min(20.625rem,65%)]">
+            <!-- <Picture src={logo} alt="Thrive Bionutrition logo" /> -->
+        </div>
+
+        <nav>
+            <ul class="list-none flex flex-col md:gap-10 md:flex-row flex-wrap m-0 items-center justify-center">
+                {nav.map((loop) => (
+                    <li>
+                        <a
+                            href={loop.href}
+                            class="text-black font-bold hover:text-orange transition-colors"
+                        >
+                            {loop.name}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+
+        <div class="flex gap-10">
+            <a href="#" aria-label="Follow us on Facebook">
+                <img
+                    src="/images/icons/facebook-footer.svg"
+                    alt="Facebook icon"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                />
+            </a>
+
+            <a href="#" aria-label="Follow us on YouTube">
+                <img
+                    src="/images/icons/youtube-footer.svg"
+                    alt="YouTube icon"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                />
+            </a>
+
+            <a href="#" aria-label="Follow us on Instagram">
+                <img
+                    src="/images/icons/instagram-footer.svg"
+                    alt="Instagram icon"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                />
+            </a>
+        </div>
+
+        <p class="border-t-[1px] border-white w-full pt-10 text-center">
+            © 2024 All rights reserved <span class="text-orange font-bold sm:inline-block block">Thrive Bionutrition</span>
+        </p>
+    </div>
+</footer>
