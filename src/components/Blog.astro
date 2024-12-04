@@ -2,13 +2,74 @@
 // Imports
 import { Picture } from 'astro:assets';
 
-const {  } = Astro.props;
+// Type definition for image modules
+type ImageModule = {
+    default: ImageMetadata;
+};
+
+// Import dynamically
+const postsImport = await import.meta.glob('../pages/insights/*.mdx', { eager: true });
+const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
+const posts = Object.values(postsImport);
+
+const { showTags, maxAmountOfPosts } = Astro.props;
 
 interface Props {
-
+    showTags?: boolean,
+    maxAmountOfPosts?: number,
 }
 ---
 
 <section class="">
+    <div class="wrapper">
+        <div class="max-w-[40rem] mb-8 empty:hidden">
+            <slot />
+        </div>
 
+        {showTags && 
+            <div class="flex justify-center gap-2 mb-8 bg-light-blue px-6 py-4 rounded-3xl w-full">
+                <a href="/insights/">All</a>
+            </div>
+        }
+
+        <ul class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
+            {posts?.map((loop: any, i: number) => {
+                // Find the corresponding image using the image path from frontmatter
+                const imagePath = `../assets/insights/${loop.frontmatter.image}`;
+                const imageModule = postImages[imagePath];
+
+                return (
+                    (!maxAmountOfPosts || maxAmountOfPosts > i) &&
+                    <li class="relative">
+                        {imageModule && (
+                            <Picture
+                                src={imageModule.default}
+                                alt={loop.frontmatter.coverAlt || ''}
+                                loading="lazy"
+                                class="aspect-[400/220]"
+                            />
+                        )}
+
+                        <div class="flex justify-between gap-2 items-center text-sm">
+                            {loop.frontmatter.author && 
+                                <p>{loop.frontmatter.author}</p>
+                            }
+                            <p class="text-[#808080]">{loop.frontmatter.date}</p>
+                        </div>
+
+                        <a 
+                            href={`${loop.url}/`}
+                            class="text-[1.35rem] no-underline after:absolute after:top-0 after:left-0 after:w-full after:h-full"
+                        >
+                            {loop.frontmatter.title}
+                        </a>
+
+                        {loop.frontmatter.description && 
+                            <p>{loop.frontmatter.description}</p>
+                        }
+                    </li>
+                );
+            })}
+        </ul>
+    </div>
 </section>

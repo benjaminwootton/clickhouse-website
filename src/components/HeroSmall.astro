@@ -1,0 +1,19 @@
+---
+import { Picture } from 'astro:assets';
+import heroGradient from 'assets/general/hero-gradient.png';
+---
+
+<section class="bg-black pt-[7.5rem] md:pt-[10.5rem] pb-[4rem] relative text-white overflow-hidden">
+    <div class="wrapper text-center">
+        <div class="z-[1] relative">
+            <slot />
+        </div>
+    </div>
+
+    <Picture
+        src={heroGradient}
+        alt=""
+        loading="lazy"
+        class="absolute bottom-0 right-0 max-w-none w-[min(150vw,70rem)]"
+    />
+</section>

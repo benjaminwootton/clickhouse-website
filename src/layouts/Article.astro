@@ -1,0 +1,122 @@
+---
+// Components
+import Header from 'components/Layout/Header.astro';
+import Footer from 'components/Layout/Footer.astro';
+import Seo from 'components/Layout/Seo.astro';
+import HeroSmall from 'components/HeroSmall.astro';
+
+// Styles
+import 'styles/Global.scss';
+
+interface Props {
+	title: string;
+	description: string;
+    noindex?: boolean;
+    date: string,
+    author?: string,
+    authorImage?: string,
+    authorLinkedIn?: string,
+    author2?: string,
+    authorImage2?: string,
+    authorLinkedIn2?: string,
+}
+
+const {
+    title, description, noindex, date, author, authorImage, authorLinkedIn, author2, authorImage2, authorLinkedIn2
+} = Astro.props;
+
+const linkedInIcon = `
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.24608 11.0515H1.06639V4.04364H3.24608V11.0515ZM2.14452 3.10614C1.46483 3.10614 0.902329 2.5202 0.902329 1.81708C0.902329 1.13739 1.46483 0.57489 2.14452 0.57489C2.84764 0.57489 3.41014 1.13739 3.41014 1.81708C3.41014 2.5202 2.84764 3.10614 2.14452 3.10614ZM11.3789 11.0515H9.22264V7.65302C9.22264 6.8327 9.1992 5.80145 8.0742 5.80145C6.9492 5.80145 6.78514 6.66864 6.78514 7.5827V11.0515H4.60545V4.04364H6.69139V5.00458H6.71483C7.01952 4.46552 7.72264 3.87958 8.77733 3.87958C10.9805 3.87958 11.4023 5.3327 11.4023 7.2077V11.0515H11.3789Z" fill="white"/>
+    </svg>
+`
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<Seo
+			title={title}
+			description={description}
+			noindex={noindex}
+		/>
+	</head>
+	<body>
+
+		<Header />
+
+		<main>
+            <article>
+                <HeroSmall>
+                    <h1>{title}</h1>
+                    {author &&
+                        <div class="my-8 flex justify-center items-center gap-3 md:gap-6 md:flex-row flex-col">
+                            <div class="relative bg-[#1e1a20] max-w-max flex items-center gap-3 rounded-full py-2 px-4">
+                                {authorImage &&
+                                    <img 
+                                        src={authorImage}
+                                        alt={author}
+                                        width="40"
+                                        height="40"
+                                        class="rounded-full object-cover w-[40px] h-[40px]"
+                                        loading="eager"
+                                    />
+                                }
+                                <p class="m-0">{author}</p>
+                                {authorLinkedIn &&
+                                    <a
+                                        href={authorLinkedIn}
+                                        set:html={linkedInIcon}
+                                        aria-label="LinkedIn"
+                                        class="
+                                            min-ww-[12px] max-w-[12px] h-[12px] block
+                                            after:absolute after:top-0 after:left-0 after:w-full after:h-full
+                                        "
+                                    />
+                                }
+                            </div>
+
+                            {author2 &&
+                                <div class="relative bg-[#1e1a20] max-w-max flex items-center gap-3 rounded-full py-2 px-4">
+                                    {authorImage2 &&
+                                        <img 
+                                            src={authorImage2}
+                                            alt={author2}
+                                            width="40"
+                                            height="40"
+                                            class="rounded-full object-cover w-[40px] h-[40px]"
+                                            loading="eager"
+                                        />
+                                    }
+                                    <p class="m-0">{author2}</p>
+                                    {authorLinkedIn2 &&
+                                        <a
+                                            href={authorLinkedIn2}
+                                            set:html={linkedInIcon}
+                                            aria-label="LinkedIn"
+                                            class="
+                                                min-ww-[12px] max-w-[12px] h-[12px] block
+                                                after:absolute after:top-0 after:left-0 after:w-full after:h-full
+                                            "
+                                        />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    <p>Published on {date}</p>
+                </HeroSmall>
+                <div class="
+                    wrapper [&_img]:rounded-xl mt-[4rem] mb-[5rem]
+                    [&_h2]:mt-10 [&_h3]:mt-8 [&_.astro-code]:my-8 [&_iframe]:my-8 [&_img]:my-8
+                    [&_.astro-code]:p-6 [&_.astro-code]:rounded-xl [&_.astro-code]:!bg-black
+                ">
+			        <slot />
+                </div>
+            </article>
+		</main>
+
+		<Footer />
+
+	</body>
+</html>
