@@ -1,0 +1,45 @@
+---
+// Components
+import Page from "layouts/Page.astro";
+import HeroSmall from 'components/HeroSmall.astro';
+import Blog from "components/Blog.astro";
+
+export async function getStaticPaths() {
+    // Import dynamically
+    const postsImport = await import.meta.glob('../*.mdx', { eager: true });
+    let posts = Object.values(postsImport);
+
+    let tags: any = [];
+    posts.forEach((post: any) => {
+        if (post.frontmatter.category) {
+            tags.push({
+                params: {
+                    tag: post.frontmatter.category.toLowerCase().replaceAll(' ', '-'),
+                },
+                props: {
+                    fullTagName: post.frontmatter.category,
+                }
+            });
+        }
+    });
+
+    return tags;
+}
+
+const { tag } = Astro.params;
+const { fullTagName } = Astro.props;
+---
+
+<Page
+    title={`${fullTagName} – ClickHouse`}
+	description="We help businesses design, build and run sophisticated real time analytics solutions based on ClickHouse, the fastest open source database in the market."
+>
+
+    <HeroSmall>
+        <h1>{fullTagName}</h1>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus. Pellentesque vel imperdiet lectus. Aenean pharetra maximus vulputate. Vivamus non aliquet arcu. Pellentesque mi felis, mollis nec lobortis eget, efficitur vitae lorem. Phasellus consequat, mauris ac venenatis tincidunt, tellus orci sagittis ligula, ac sollicitudin velit mauris ac elit. </p>
+    </HeroSmall>
+
+    <Blog showTags activeTag={fullTagName} />
+    
+</Page>

@@ -10,12 +10,10 @@ type ImageModule = {
 // Import dynamically
 const postsImport = await import.meta.glob('../pages/insights/*.mdx', { eager: true });
 const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
-const posts = Object.values(postsImport);
+let posts = Object.values(postsImport);
+let filteredPosts = [];
 
 const { showTags, maxAmountOfPosts, activeTag } = Astro.props;
-const currentPage = Number(Astro.url.searchParams.get('page') || 1);
-const postsPerPage = 12;
-const totalPages = Math.ceil(posts.length / postsPerPage);
 
 interface Props {
     showTags?: boolean,
@@ -23,14 +21,46 @@ interface Props {
     activeTag?: string,
 }
 
-const tagStyle = `px-4 py-2 no-underline rounded-3xl flex gap-2`
+// Filter posts by activeTag if it is provided
+if (activeTag) {
+    filteredPosts = posts.filter((post: any) => post.frontmatter.category === activeTag);
+} else {
+    filteredPosts = posts;
+}
+
+const currentPage = Number(Astro.url.searchParams.get('page') || 1);
+const postsPerPage = 12;
+const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+
+// Tags
+let tags: any = [];
+posts.forEach((post: any) => {
+    if (post.frontmatter.category) {
+        const category = post.frontmatter.category;
+        const existingTag = tags.find((tag: any) => tag.name === category);
+        if (existingTag) {
+            existingTag.amount += 1;
+        } else {
+            tags.push({
+                url: category.toLowerCase().replaceAll(' ', '-'),
+                name: category,
+                amount: 1,
+            });
+        }
+    }
+});
+
+
+const tagStyle = `px-4 py-2 no-underline rounded-3xl items-center hover:bg-white transition-colors flex gap-2`
+const numberStyle = `text-[10px] bg-black text-white rounded-full
+    w-[16px] max-w-[16px] h-[16px] flex justify-center items-center`
 const activeStyle = `bg-white`
 ---
 
 <section 
     class=""
     id="blog"
-    data-total-pages={Math.ceil(posts.length / postsPerPage)}
+    data-total-pages={Math.ceil(filteredPosts.length / postsPerPage)}
     data-posts-per-page={postsPerPage}
 >
     <div class="wrapper">
@@ -39,21 +69,26 @@ const activeStyle = `bg-white`
         </div>
 
         {showTags && 
-            <div class="flex justify-center gap-2 mb-8 bg-light-blue px-6 py-4 rounded-3xl w-full">
+            <div class="flex justify-center gap-2 mb-8 bg-light-blue px-4 py-2 rounded-3xl mx-auto max-w-max">
                 <a
-                    class={`
-                        ${tagStyle}
-                        ${!activeTag ? activeStyle : ''}
-                    `}
+                    class={` ${tagStyle} ${!activeTag ? activeStyle : ''}`}
                     href="/insights/"
                 >
-                    All News
+                    All News <span class={numberStyle}>{posts.length}</span>
                 </a>
+                {tags?.map((loop: any) => (
+                    <a
+                        class={` ${tagStyle} ${activeTag === loop.name ? activeStyle : ''}`}
+                        href={`/insights/categories/${loop.url}/`}
+                    >
+                        {loop.name} <span class={numberStyle}>{loop.amount}</span>
+                    </a>
+                ))}
             </div>
         }
 
         <ul id="posts-container" class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
-            {posts?.map((loop: any, i: number) => {
+            {filteredPosts?.map((loop: any, i: number) => {
                 // Find the corresponding image using the image path from frontmatter
                 const imagePath = `../assets/insights/${loop.frontmatter.image}`;
                 const imageModule = postImages[imagePath];
@@ -109,24 +144,26 @@ const activeStyle = `bg-white`
         </ul>
 
         <div id="pagination" class="flex justify-center items-center gap-2 mt-8">
-            <a 
-                href={`/insights/?page=${currentPage - 1}`} 
-                class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
-                    flex justify-center items-center no-underline mr-2 hover:bg-gray-100
-                    pointer-events-none opacity-50
-                "
-            >
-                <img
-                    src="/images/icons/arrow-right.svg"
-                    width="16"
-                    height="16"
-                    loading="lazy"
-                    class="rotate-180"
-                    alt="Previous page"
-                />
-            </a>
+            {totalPages > 1 &&
+                <a 
+                    href={`/insights/?page=${currentPage - 1}`} 
+                    class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
+                        flex justify-center items-center no-underline mr-2 hover:bg-gray-100
+                        pointer-events-none opacity-50
+                    "
+                >
+                    <img
+                        src="/images/icons/arrow-right.svg"
+                        width="16"
+                        height="16"
+                        loading="lazy"
+                        class="rotate-180"
+                        alt="Previous page"
+                    />
+                </a>
+            }
             
-            {[...Array(totalPages).keys()]?.map((_, i) => (
+            {totalPages > 1 && [...Array(totalPages).keys()]?.map((_, i) => (
                 <a 
                     href={`/insights/?page=${i + 1}`}
                     data-number={i + 1}
