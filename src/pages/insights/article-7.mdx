@@ -20,17 +20,7 @@ import RelatedPosts from 'components/RelatedPosts.astro';
 import { Picture } from 'astro:assets';
 import carStreamsImage from 'assets/home/car-streams.jpg';
 
-<Article
-    title={frontmatter.title}
-    description={frontmatter.description}
-    date={frontmatter.date}
-    author={frontmatter?.author}
-    authorImage={frontmatter?.authorImage}
-    authorLinkedIn={frontmatter?.authorLinkedIn}
-    author2={frontmatter?.author2}
-    authorImage2={frontmatter?.authorImage2}
-    authorLinkedIn2={frontmatter?.authorLinkedIn2}
->
+<Article data={frontmatter}>
 
     <Picture
         src={carStreamsImage}

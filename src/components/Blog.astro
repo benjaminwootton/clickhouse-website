@@ -143,115 +143,119 @@ const activeStyle = `bg-white`
             })}
         </ul>
 
-        <div id="pagination" class="flex justify-center items-center gap-2 mt-8">
-            {totalPages > 1 &&
-                <a 
-                    href={`/insights/?page=${currentPage - 1}`} 
-                    class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
-                        flex justify-center items-center no-underline mr-2 hover:bg-gray-100
-                        pointer-events-none opacity-50
-                    "
-                >
-                    <img
-                        src="/images/icons/arrow-right.svg"
-                        width="16"
-                        height="16"
-                        loading="lazy"
-                        class="rotate-180"
-                        alt="Previous page"
-                    />
-                </a>
-            }
-            
-            {totalPages > 1 && [...Array(totalPages).keys()]?.map((_, i) => (
-                <a 
-                    href={`/insights/?page=${i + 1}`}
-                    data-number={i + 1}
-                    class={`
-                        max-w-[48px] min-w-[48px] h-[48px] border rounded-full hover:bg-gray-100
-                        flex justify-center items-center no-underline
-                        ${i === 0 ? 'border-black' : ''}
-                    `}
-                >
-                    {i + 1}
-                </a>
-            ))}
-            
-            {currentPage < totalPages && (
-                <a 
-                    href={`/insights/?page=${currentPage + 1}`} 
-                    class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
-                        flex justify-center items-center no-underline ml-2 hover:bg-gray-100
-                    "
-                >
-                    <img
-                        src="/images/icons/arrow-right.svg"
-                        width="16"
-                        height="16"
-                        loading="lazy"
-                        alt="Next page"
-                    />
-                </a>
-            )}
-        </div>
+        {!maxAmountOfPosts &&
+            <div id="pagination" class="flex justify-center items-center gap-2 mt-8">
+                {totalPages > 1 &&
+                    <a 
+                        href={`/insights/?page=${currentPage - 1}`} 
+                        class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
+                            flex justify-center items-center no-underline mr-2 hover:bg-gray-100
+                            pointer-events-none opacity-50
+                        "
+                    >
+                        <img
+                            src="/images/icons/arrow-right.svg"
+                            width="16"
+                            height="16"
+                            loading="lazy"
+                            class="rotate-180"
+                            alt="Previous page"
+                        />
+                    </a>
+                }
+                
+                {totalPages > 1 && [...Array(totalPages).keys()]?.map((_, i) => (
+                    <a 
+                        href={`/insights/?page=${i + 1}`}
+                        data-number={i + 1}
+                        class={`
+                            max-w-[48px] min-w-[48px] h-[48px] border rounded-full hover:bg-gray-100
+                            flex justify-center items-center no-underline
+                            ${i === 0 ? 'border-black' : ''}
+                        `}
+                    >
+                        {i + 1}
+                    </a>
+                ))}
+                
+                {currentPage < totalPages && (
+                    <a 
+                        href={`/insights/?page=${currentPage + 1}`} 
+                        class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
+                            flex justify-center items-center no-underline ml-2 hover:bg-gray-100
+                        "
+                    >
+                        <img
+                            src="/images/icons/arrow-right.svg"
+                            width="16"
+                            height="16"
+                            loading="lazy"
+                            alt="Next page"
+                        />
+                    </a>
+                )}
+            </div>
+        }
     </div>
 </section>
 
-<script is:inline>
-    document.addEventListener('DOMContentLoaded', () => {
-        const section = document.getElementById('blog');
-        const postsContainer = document.getElementById('posts-container');
-        const allPosts = postsContainer.querySelectorAll('li');
-        const paginationLinks = document.querySelectorAll('#pagination a[data-number]');
-        const prevPageLink = document.querySelector('#pagination a[href*="page="]');
-        const nextPageLink = document.querySelector('#pagination a[href*="page="] img[alt="Next page"]').closest('a');
+{!maxAmountOfPosts &&
+    <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+            const section = document.getElementById('blog');
+            const postsContainer = document.getElementById('posts-container');
+            const allPosts = postsContainer.querySelectorAll('li');
+            const paginationLinks = document.querySelectorAll('#pagination a[data-number]');
+            const prevPageLink = document.querySelector('#pagination a[href*="page="]');
+            const nextPageLink = document.querySelector('#pagination a[href*="page="] img[alt="Next page"]').closest('a');
 
-        // Get current page from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentPage = Number(urlParams.get('page') || 1);
+            // Get current page from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPage = Number(urlParams.get('page') || 1);
 
-        const totalPages = Number(section.dataset.totalPages);
-        const postsPerPage = Number(section.dataset.postsPerPage);
+            const totalPages = Number(section.dataset.totalPages);
+            const postsPerPage = Number(section.dataset.postsPerPage);
 
-        // Set correct href for previous page link
-        if (currentPage === 1) {
-            prevPageLink.classList.add('pointer-events-none', 'opacity-50');
-            prevPageLink.removeAttribute('href');
-        } else {
-            prevPageLink.href = `/insights/?page=${currentPage - 1}`;
-            prevPageLink.classList.remove('pointer-events-none', 'opacity-50');
-        }
-
-        // Set correct href for next page link
-        if (currentPage === totalPages) {
-            nextPageLink.classList.add('pointer-events-none', 'opacity-50');
-            nextPageLink.removeAttribute('href');
-        } else {
-            nextPageLink.href = `/insights/?page=${currentPage + 1}`;
-        }
-
-        // Highlight current page number
-        paginationLinks.forEach(link => {
-            if (Number(link.getAttribute('data-number')) === currentPage) {
-                link.classList.add('border-black');
+            // Set correct href for previous page link
+            if (currentPage === 1) {
+                prevPageLink.classList.add('pointer-events-none', 'opacity-50');
+                prevPageLink.removeAttribute('href');
             } else {
-                link.classList.remove('border-black');
+                prevPageLink.href = `/insights/?page=${currentPage - 1}`;
+                prevPageLink.classList.remove('pointer-events-none', 'opacity-50');
             }
-        });
 
-        // Initially hide all posts
-        allPosts.forEach(post => {
-            post.style.display = 'none';
-        });
-
-        // Show posts for the current page
-        const startIndex = (currentPage - 1) * postsPerPage;
-        const endIndex = startIndex + postsPerPage;
-
-        allPosts.forEach((post, index) => {
-            if (index >= startIndex && index < endIndex) {
-                post.style.display = 'block';
+            // Set correct href for next page link
+            if (currentPage === totalPages) {
+                nextPageLink.classList.add('pointer-events-none', 'opacity-50');
+                nextPageLink.removeAttribute('href');
+            } else {
+                nextPageLink.href = `/insights/?page=${currentPage + 1}`;
             }
+
+            // Highlight current page number
+            paginationLinks.forEach(link => {
+                if (Number(link.getAttribute('data-number')) === currentPage) {
+                    link.classList.add('border-black');
+                } else {
+                    link.classList.remove('border-black');
+                }
+            });
+
+            // Initially hide all posts
+            allPosts.forEach(post => {
+                post.style.display = 'none';
+            });
+
+            // Show posts for the current page
+            const startIndex = (currentPage - 1) * postsPerPage;
+            const endIndex = startIndex + postsPerPage;
+
+            allPosts.forEach((post, index) => {
+                if (index >= startIndex && index < endIndex) {
+                    post.style.display = 'block';
+                }
+            });
         });
-    });
-</script>
+    </script>
+}

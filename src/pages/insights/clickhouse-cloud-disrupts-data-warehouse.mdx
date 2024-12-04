@@ -1,0 +1,45 @@
+---
+title: Why ClickHouse Cloud Disrupts The Data Warehouse Industry 
+date_published: 2023-10-07T22:06:16.000Z
+date_updated: 2023-10-07T14:39:30.000Z
+order: 11
+image: /x.jpg
+featured_image: ./images/4.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 15, 14, 13, 12
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+In recent years, when I have been asked by businesses which data warehouse to choose, there were 3 candidates at the top of the list.
+
+Snowflake was the natural place for business intelligence workloads based around relational data where the main requirement was to run vanilla dashboards and reports. 
+
+Databricks was the natural home for big data and data science type workloads where there was a need to work with Python and Scala.  
+
+ClickHouse was the open source, data centre based alternative when we were working with event and time series data and needed low latency query performance.
+
+Though these platforms can all make a claim on each others space and were all converging to a degree, I think these are broadly fair categorisations.
+
+## ClickHouse Cloud 
+
+Though I liked ClickHouse due to it's open source nature and amazing performance, the frustrating thing was that I also felt the managed service experience of Snowflake and Databricks were the best thing for end clients.  
+
+Building and running data infrastructure is complex and a strong candidate for outsourcing in my opinion and as a cloud advocate, I found it hard to really stand behind the position that you should build and run your own data warehouse.
+
+When ClickHouse Cloud hit the market, I think that this was really significant for the industry.  We now had the ClickHouse product with it's relative strengths, but the option of using it as a managed service.  This moved it into contention against Snowflake, Databricks, BigQuery and Redshift for the first time.
+
+In addition to the "managed service" angle, ClickHouse also adopted a "cloud native" architecture which enabled better horizontal scalability and seperation of compute and storage.  I think this was the right choice to allow them to properly go up against these big names with the same architectural and serverless pattern.  
+
+The economic side is significant too.  Though I think managed services are a good option for data and analytics, I am nonetheless always concerned about the cost profile.  If you ingest a lot of data and big workloads, then is there the potential to be locked in to spiralling costs? 
+
+With ClickHouse, you have the option of starting with ClickHouse Cloud, but you always have the option of taking your ball and migrating to your own data centre if the economics do begin to look better for you, in a way which you cannot do with Snowflake, Databricks, BigQuery or Redshift.
+
+I think that when you intersect all of these benefits, ClickHouse Cloud is really setup to disrupt the Data Warehousing market.  Options of managed service or running your own in the data centre, clean cloud native architecture, different economic models across cloud or self hosted, open source foundations, and then the performance and feature profile of ClickHouse are a really unique combination which I think has real potential to disrupt the landscape.
+ 
