@@ -1,4 +1,5 @@
 const header = document.getElementById("header");
+const body = document.body;
 
 // Mobile menu toggle
 document.addEventListener('DOMContentLoaded', () => {
@@ -12,42 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Header scroll logic
-document.addEventListener('DOMContentLoaded', () => {
-    const header = document.getElementById('header');
-    let lastScrollTop = 0;
-    let ticking = false;
-
-    function updateHeader() {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Scroll direction detection
-        if (scrollTop > lastScrollTop) {
-            // Scrolling down
-            header.classList.add('scrolling-down');
-            header.classList.remove('scrolling-up');
-        } else {
-            // Scrolling up
-            header.classList.remove('scrolling-down');
-            header.classList.add('scrolling-up');
-        }
-
-        // Scrolled state
-        if (scrollTop > 150) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-            header.classList.remove('scrolling-up');
-            header.classList.remove('scrolling-down');
-        }
-
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-        ticking = false;
+window.onscroll = function (e) {
+    if (this.oldScroll < this.scrollY) {
+        header.classList.add('scrolling-down');
+    } else {
+        header.classList.remove('scrolling-down');
     }
 
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            window.requestAnimationFrame(updateHeader);
-            ticking = true;
-        }
-    });
-});
+    if (this.scrollY > 75) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+
+    this.oldScroll = this.scrollY;
+}
