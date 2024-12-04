@@ -6,17 +6,67 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
     border-[1px] border-[#CECFD5]`
 ---
 
-<section class="wrapper flex gap-8 lg:flex-row flex-col mt-12">
+<section class="wrapper flex gap-8 lg:gap-10 lg:flex-row flex-col mt-12">
     <div class="flex-[1]">
         <h2>Get In Touch</h2>
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus. Pellentesque vel imperdiet lectus. Aenean pharetra maximus vulputate. </p>
     
-        <a href="#">
+        <a href="mailto:hello@ensembleai.io" class="no-underline flex gap-3 mt-9">
             <img
                 src="/images/icons/email-black.svg"
                 alt="Email us"
+                loading="lazy"
+                width="48"
+                height="48"
+                class="max-w-[48px] min-w-[48px]"
             >
+            <div>
+                <p class="m-0 font-bold">Email</p>
+                <p class="m-0">hello@ensembleai.io</p>
+            </div>
         </a>
+
+        <a href="tel:+123-456-7890" class="no-underline flex gap-3 mt-6">
+            <img
+                src="/images/icons/phone-black.svg"
+                alt="Call us"
+                loading="lazy"
+                width="48"
+                height="48"
+                class="max-w-[48px] min-w-[48px]"
+            >
+            <div>
+                <p class="m-0 font-bold">Email</p>
+                <p class="m-0">+123-456-7890</p>
+            </div>
+        </a>
+
+        <div class="mt-8 lg:mt-12 pt-2 lg:pt-6 border-t-[1px] border-[#CECFD5]">
+            <p class="font-bold">Follow Us</p>
+            <div class="flex gap-4 mt-4">
+                <a href="#" class="no-underline">
+                    <img
+                        src="/images/icons/linkedin-black.svg"
+                        alt="Follow us on LinkedIn"
+                        loading="lazy"
+                        width="48"
+                        height="48"
+                        class="max-w-[48px] min-w-[48px]"
+                    >
+                </a>
+
+                <a href="#" class="no-underline">
+                    <img
+                        src="/images/icons/youtube-black.svg"
+                        alt="Follow us on YouTube"
+                        loading="lazy"
+                        width="48"
+                        height="48"
+                        class="max-w-[48px] min-w-[48px]"
+                    >
+                </a>
+            </div>
+        </div>
     </div>
 
     <form 
@@ -39,7 +89,8 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
 
         <label>
             Question Type*
-            <select class={inputStyle}>
+            <select class={inputStyle} required>
+                <option value="Question Type" disabled selected>Question Type</option>
                 <option value="General Inquiry">General Inquiry</option>
                 <option value="Technical Support">Technical Support</option>
                 <option value="Sales Inquiry">Sales Inquiry</option>
