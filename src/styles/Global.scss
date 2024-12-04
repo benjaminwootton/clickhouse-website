@@ -126,3 +126,34 @@ img, video {
     height: auto;
     display: block;
 }
+
+.hover-underline-effect-parent .hover-underline-effect-child,
+.hover-underline-effect {
+    position: relative;
+    max-width: max-content;
+
+    &::after {
+        content: '';
+        width: 0;
+        height: 1px;
+        bottom: -0.5rem;
+        left: 0;
+        position: absolute;
+        background-color: #fff;
+        transition: width 0.3s;
+    }
+
+    &:hover::after {
+        width: 100%;
+    }
+}
+
+.hover-underline-effect-black::after {
+    background-color: #000 !important;
+}
+
+.hover-underline-effect-parent:hover .hover-underline-effect-child {
+    &::after {
+        width: 100%;
+    }
+}

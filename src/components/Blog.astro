@@ -33,17 +33,20 @@ const postsPerPage = 12;
 const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
 
 // Tags
-let tags: any = [];
+let tags: { url: string; name: string; amount: number }[] = [];
 posts.forEach((post: any) => {
     if (post.frontmatter.tag) {
-        const tag = post.frontmatter.tag;
-        const existingTag = tags.find((tag: any) => tag.name === tag);
-        if (existingTag) {
-            existingTag.amount += 1;
+        const tagName = post.frontmatter.tag;
+        const tagIndex = tags.findIndex(tag => tag.name === tagName);
+
+        if (tagIndex !== -1) {
+            // If tag exists, increment its amount
+            tags[tagIndex].amount += 1;
         } else {
+            // If tag doesn't exist, add new tag
             tags.push({
-                url: tag.toLowerCase().replaceAll(' ', '-'),
-                name: tag,
+                url: tagName.toLowerCase().replaceAll(' ', '-'),
+                name: tagName,
                 amount: 1,
             });
         }
@@ -64,7 +67,7 @@ const activeStyle = `bg-white`
     data-posts-per-page={postsPerPage}
 >
     <div class="wrapper">
-        <div class="max-w-[40rem] mb-8 empty:hidden">
+        <div class="max-w-[45rem] mb-8 empty:hidden">
             <slot />
         </div>
 
@@ -105,7 +108,7 @@ const activeStyle = `bg-white`
                 return (
                     (!maxAmountOfPosts || maxAmountOfPosts > i) &&
                     <li 
-                        class="relative group"
+                        class="relative group hover-underline-effect-parent"
                         data-post-index={i}
                     >
                         <div class="overflow-hidden">
@@ -128,13 +131,13 @@ const activeStyle = `bg-white`
 
                         <a 
                             href={`${loop.url}/`}
-                            class="text-[1.35rem] no-underline after:absolute my-1 block after:top-0 after:left-0 after:w-full after:h-full"
+                            class="text-[1.35rem] no-underline after:absolute mt-1 block after:top-0 after:left-0 after:w-full after:h-full"
                         >
                             {loop.frontmatter.title}
                         </a>
 
                         {loop.frontmatter.description && 
-                            <p>
+                            <p class="text-[#555] text-[0.9375rem]">
                                 {loop.frontmatter.description?.length > 190 ? 
                                     loop.frontmatter.description.slice(0, 190) + '...'
                                     :
@@ -143,7 +146,7 @@ const activeStyle = `bg-white`
                             </p>
                         }
 
-                        <p class="flex gap-2 items-center text-sm">
+                        <p class="flex gap-2 items-center text-sm hover-underline-effect-child hover-underline-effect-black">
                             Read More 
                             <img
                                 src="/images/icons/up-arrow.svg"

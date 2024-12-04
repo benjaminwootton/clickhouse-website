@@ -27,7 +27,7 @@ import logsinclickhouse from 'assets/insights/logsinclickhouse.png';
 
 <InformationEmbed url="https://github.com/ensembleanalytics/clickhouse-sagemaker" title="Click here to download the sample SageMaker notebook"></InformationEmbed>
 
-In previous articles, we looked at performing machine learning tasks such as [forecasting](/blog/forecasting-using-clickhouse) and [anomaly detection](/blog/anomaly-detection-using-clickhouse) directly within ClickHouse using only SQL.  
+In previous articles, we looked at performing machine learning tasks such as [forecasting](/insights/forecasting-using-clickhouse) and [anomaly detection](/insights/anomaly-detection-using-clickhouse) directly within ClickHouse using only SQL.  
 
 Though we demonstrated successful results with those examples, there are still many machine learning tasks where we realistically need to break out of SQL and into an imperative programming language and inference environment.  
 
@@ -367,7 +367,7 @@ Outputs:
 0.13059244
 ```
 
-Note that we could also have calculated these performance metrics directly within ClickHouse as we did in our [forecasting](/blog/forecasting-using-clickhouse) and [anomaly detection](/blog/anomaly-detection-using-clickhouse) examples.  
+Note that we could also have calculated these performance metrics directly within ClickHouse as we did in our [forecasting](/insights/forecasting-using-clickhouse) and [anomaly detection](/insights/anomaly-detection-using-clickhouse) examples.  
 
 ## Using The Forecasts
 
@@ -399,7 +399,7 @@ data_capture_config = DataCaptureConfig(
 )
 ```
 
-By default, the inputs and outputs will be logged as JSON files in S3.  These can then be queried in ClickHouse using the [S3 table function](https://clickhouse.com/docs/en/sql-reference/table-functions/s3) or [S3 table engine](https://clickhouse.com/docs/en/engines/table-engines/integrations/s3) within ClickHouse.  This effectively gives us live observability of the machine learning model with [SQL based observability](https://clickhouse.com/blog/the-state-of-sql-based-observability).
+By default, the inputs and outputs will be logged as JSON files in S3.  These can then be queried in ClickHouse using the [S3 table function](https://clickhouse.com/docs/en/sql-reference/table-functions/s3) or [S3 table engine](https://clickhouse.com/docs/en/engines/table-engines/integrations/s3) within ClickHouse.  This effectively gives us live observability of the machine learning model with [SQL based observability](https://clickhouse.com/insights/the-state-of-sql-based-observability).
 
 ```
 SELECT * FROM s3('https://ensemble-sagemaker.s3.eu-west-2.amazonaws.com/model-monitor/data-capture/sagemaker-jumpstart-2023-12-12-13-57-47-067/AllTraffic/2023/12/12/14/*.jsonl', 

@@ -69,7 +69,7 @@ In terms of storage, both vendors charge on a per terrabyte per month basis, ave
 
 As both vendors are storing data in the same cloud object stores, comparing storage costs is therefore an easy comparison to make.  We simply need to multiply your data storage volume by the unit price to calculate the storage costs for each platform.  
 
-One factor which could lead to different storage costs is compression.  Both platforms will compress your data efficiently and you will only be charged for the compressed data volume.  ClickHouse's own analysis claims that they can [achieve 38% better compression performance](https://ClickHouse.com/blog/ClickHouse-vs-snowflake-for-real-time-analytics-comparison-migration-guide) than Snowflake, but we haven't independently tested this and it is likely to be a function of your specific data.  This could however offset the slightly more expensive per terrabyte cost of storing data in ClickHouse Cloud.
+One factor which could lead to different storage costs is compression.  Both platforms will compress your data efficiently and you will only be charged for the compressed data volume.  ClickHouse's own analysis claims that they can [achieve 38% better compression performance](https://ClickHouse.com/insights/ClickHouse-vs-snowflake-for-real-time-analytics-comparison-migration-guide) than Snowflake, but we haven't independently tested this and it is likely to be a function of your specific data.  This could however offset the slightly more expensive per terrabyte cost of storing data in ClickHouse Cloud.
 
 In many use cases, storage costs turn out to be immaterial in comparison with compute costs.  Storage generally is "cheap", and by the time you have enough data for the differences in storage costs to become material, differences in compute costs will likely be a more significant factor for your TCO.  
 
@@ -292,7 +292,7 @@ With Clickhouse, there is also a tendancy and the option to query raw data direc
 
 As we have pointed out throughout this article, ClickHouse scales up and down in 8gb increments, with costs changing linearly.  This is in contrast with Snowflake which rises exponentially with each step up in virtual warehouse size.  Together with the auto-scaling features of ClickHouse Cloud, this means that your instances can regularly and accurately be right-sized without any need for overcapacity.  This is likely to be very significant as your environment begins to grow.  
 
-Finally, we would point towards [this article published by Clickhouse](https://clickhouse.com/blog/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis) which provides a more real-world view of costs when performing activities such as data loading and querying.  This complements our own analysis well with that real-world perspective, whilst also coming to similiar conclusions with regards to the potential savings.  
+Finally, we would point towards [this article published by Clickhouse](https://clickhouse.com/insights/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis) which provides a more real-world view of costs when performing activities such as data loading and querying.  This complements our own analysis well with that real-world perspective, whilst also coming to similiar conclusions with regards to the potential savings.  
 
 ### Conclusion
 
@@ -302,7 +302,7 @@ We fully modelled the costs based on tiers and compute resources, and saw how th
 
 We then modelled 3 real-world examples, and demonstrated cost savings of between 40% and 55% for different workloads.  
 
-Though our analysis is fairly heavily caveated, we believe that the numbers are very compelling in the favour of ClickHouse and the broad conclusions hold.  This should remain the case as we move into real-world usage scenarios as evidenced by [ClickHouse's own work on relative TCO](https://clickhouse.com/blog/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis).
+Though our analysis is fairly heavily caveated, we believe that the numbers are very compelling in the favour of ClickHouse and the broad conclusions hold.  This should remain the case as we move into real-world usage scenarios as evidenced by [ClickHouse's own work on relative TCO](https://clickhouse.com/insights/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis).
 
 We encourage you to use our pricing calculator, accessed via the link below to understand your own cost profile and the potential ROI of a migration project.  Please also reach out to us for an ROI and business case analysis of your own environment and datasets.   
 

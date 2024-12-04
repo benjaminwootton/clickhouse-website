@@ -21,11 +21,11 @@ import Article from 'layouts/Article.astro';
 
 <InformationEmbed url="https://github.com/ensembleanalytics/clickhouse-sagemaker-feature-store" title="Click here to download the sample SageMaker notebook"></InformationEmbed>
 
-In a [recent blog post](/blog/forecasting-using-clickhouse-sagemaker) we walked through the process of combining [AWS SageMaker](https://aws.amazon.com/sagemaker/) with ClickHouse to develop and deploy a machine learning model.  
+In a [recent blog post](/insights/forecasting-using-clickhouse-sagemaker) we walked through the process of combining [AWS SageMaker](https://aws.amazon.com/sagemaker/) with ClickHouse to develop and deploy a machine learning model.  
 
 In that article we demonstrated the value that a high performance OLAP database such as [ClickHouse](https://clickhouse.com) could offer across the MLOps lifecycle, from exploratory analysis, managing training data, maintaining feature stores and supporting observability and monitoring.
 
-In this article we wanted to dig deeper into one element of that - the feature store.  This article builds on a recent post by the ClickHouse team [Powering Feature Stores With ClickHouse](/blog/powering-featurestores-with-clickhouse), but shows a slightly different approach and technology stack based on SageMaker, the AWS machine learning platform.  
+In this article we wanted to dig deeper into one element of that - the feature store.  This article builds on a recent post by the ClickHouse team [Powering Feature Stores With ClickHouse](/insights/powering-featurestores-with-clickhouse), but shows a slightly different approach and technology stack based on SageMaker, the AWS machine learning platform.  
 
 In this article, we also want to touch on how we can use this technology stack for _explainability_ in order to examine the impact of the different features on the model output.  We will make use of a feature called [SageMaker Clarify](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-model-explainability.html) to support this. 
 
@@ -177,7 +177,7 @@ Though we have used a simple view here, we could have taken a few different appr
 
 - We could have used a _materialised view_ to materialise the _fraud_feature_store_ table into disk.  This would improve the performance at inference time and make it easier to keep the feature store up to date as the base table is updated;
 - We could have made use of an external tool such as [dbt](/learn/categories/dbt) to externalise the view definition into a source controlled file.  Features could then be rebuilt and tested periodically as a batch;
-- We could have made use of a virtual feature store product such as Featureform as outlined in the [ClickHouse blog post](/blog/powering-featurestores-with-clickhouse) to manage this process.
+- We could have made use of a virtual feature store product such as Featureform as outlined in the [ClickHouse blog post](/insights/powering-featurestores-with-clickhouse) to manage this process.
 
 We believe that using a simple view demonstrates again how ClickHouse can simplify your technology stack, relying on it's horsepower to avoid external dependencies.
 
@@ -804,7 +804,7 @@ We interacted with this endpoint to test model performance and to demonstrate ex
 
 All in all, this is a simple but powerful appraoch, and the performance of ClickHouse is a real differentiator for this use case.  
 
-Together with our first blog post, we hope we are making the point that ClickHouse [is a great fit for supporting the MLOps workflow](/blog/forecasting-using-clickhouse-sagemaker)! 
+Together with our first blog post, we hope we are making the point that ClickHouse [is a great fit for supporting the MLOps workflow](/insights/forecasting-using-clickhouse-sagemaker)! 
 
 <InformationEmbed url="https://github.com/ensembleanalytics/clickhouse-sagemaker-feature-store" title="Click here to download the sample SageMaker notebook"></InformationEmbed>
 
