@@ -1,0 +1,426 @@
+---
+title: Building A Recommendation System Using ClickHouse and SQL
+description: In recent blog posts we demonstrated how data science techniques such as forecasting and anomaly detection can be implemented entirely within ClickHouse using only SQL.
+order: 99
+tag: Tools
+featured_image: 38.jpg
+date_published: 2024-02-26
+date_updated: 2024-02-26
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/cfc284ee-33d2-40c8-8dc3-a0096d085220/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+In [recent blog posts](/blog) we demonstrated how data science techniques such as [forecasting](/blog/forecasting-using-clickhouse) and [anomaly detection](/blog/anomaly-detection-using-clickhouse) can be implemented entirely within ClickHouse using only SQL.  
+
+By doing this, we avoid the need to write and run Python code, simplifying the technology stack.  This also avoids the need to move data over the network and allows us to take full advantage of the performance characteristics of ClickHouse.   
+
+We now wanted to demonstrate how we could take a similar ClickHouse centric approach to another data science problem - building a _recommendation engine_.  
+
+In this class of problem, we have a number of observations of how users or customers are behaving, and would like to use them to make recomendations which will maximise some outcome in future.  
+
+For example, we could use a recommendation system to suggest products to buy on an eCommerce store in order to maximise sales, or choose which social media posts to show in a feed to maximise engagement.  
+
+This is such a valuable problem that as far back as 2009, Netflix offered a $1m prize to anyone who could beat the performance of their recommendation algorithm by just 10%.  Today, many businesses employ an army of expensive data scientists to help them improve their recomendations, knowing that better recommendations will ultimately significantly increase revenue.  
+
+## About The Example
+
+Our aim in this example is to build a simple recommender system using only ClickHouse SQL.  We will use a technique called _Collaborative Filtering_ and make use of the ClickHouse _cosineDistance_ function as part of our solution. 
+
+For our data, we will use the [MovieLens 100k Dataset](https://www.kaggle.com/datasets/prajitdatta/movielens-100k-dataset), which contains ratings for 100,000 ratings from 1000 unique users for 1700 movies.  However, we will use just a subset of these to demonstrate the concept and make the visualisations easier to follow.  
+
+Our source data has already been loaded into ClickHouse in a table called movie_ratings, which lists the users, movie identifiers and ratings:  
+
+```
+SELECT *
+FROM movie_ratings
+LIMIT 10
+
+Query id: 2df20bf6-cb32-42c1-8e45-4c86d8ff873e
+
+┌─split─┬─user_id─┬─item_id─┬─rating─┐
+│ train │       1 │     127 │      5 │
+│ train │       1 │      28 │      4 │
+│ train │       1 │      15 │      5 │
+│ train │       1 │     173 │      5 │
+│ train │       1 │     125 │      3 │
+│ train │       1 │      70 │      3 │
+│ train │       1 │     237 │      2 │
+│ train │       1 │     132 │      4 │
+│ train │       1 │     143 │      1 │
+│ train │       1 │      69 │      3 │
+└───────┴─────────┴─────────┴────────┘
+
+10 rows in set. Elapsed: 0.003 sec. Processed 7.09 thousand rows, 182.46 KB (2.51 million rows/s., 64.54 MB/s.)
+Peak memory usage: 264.04 KiB.
+```
+
+The data can be visualised in the following way, with one bar for each user which shows how many movies they rated and the distribution of ratings.  For instance, user 1 gave 2 movies a rating of 1.
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/cfc284ee-33d2-40c8-8dc3-a0096d085220/latest?embedded=true&embeddedStaticCellId=478a4c1d-0cb9-4cb4-947a-49f860b1325c" ></iframe>
+</div>
+
+
+We have split the dataset into a training set and a test set, which can be identified through the split column:
+
+```
+SELECT
+    split,
+    uniqExact(user_id) AS num_users,
+    uniqExact(item_id) AS num_items,
+    count(*) AS num_records,
+    min(rating) AS min_rating,
+    max(rating) AS max_rating
+FROM movie_ratings
+GROUP BY split
+
+Query id: 1667146d-32a3-4315-8bae-62026253ac33
+
+┌─split─┬─num_users─┬─num_items─┬─num_records─┬─min_rating─┬─max_rating─┐
+│ train │       100 │       100 │        5314 │          1 │          5 │
+│ test  │       100 │       100 │        1772 │          1 │          5 │
+└───────┴───────────┴───────────┴─────────────┴────────────┴────────────┘
+
+2 rows in set. Elapsed: 0.026 sec. Processed 7.09 thousand rows, 182.46 KB (276.66 thousand rows/s., 7.12 MB/s.)
+Peak memory usage: 161.26 KiB.
+```
+
+Note that we performed a stratified random split to make sure that each user is included both in the training set and in the test set to make it easier to validate performance of the algorithm.
+
+## Deriving The Recommendations
+
+We will implement memory based user-user collaborative filtering, which recommends to each user the movies that were liked by other users with similar tastes. 
+
+The similarity between the tastes of different users is measured based on their historical ratings, i.e. users that assigned similar ratings to the same movies are considered to have similar tastes.
+
+Mathematically, this is achieved by computing the _cosine similarity_ between the users rating vectors.  
+
+There is a challenge in that the rating vectors of different users are not directly comparable if the users have rated different subsets of movies.  To address this issue, we perform a cross join such that each user's rating vector includes all movies in the dataset and where the movies that were not rated by the user are assigned a rating of zero.  
+
+To reduce the impact of missing (i.e. zero) ratings, we center each user's rating vector by subtracting the mean.
+
+
+```
+create or replace view 
+    movie_ratings_cross_join
+as select 
+    a.user_id as user_id, 
+    b.item_id as item_id,
+    c.rating as rating,
+    c.centered_rating as centered_rating 
+from 
+    (
+    select distinct 
+        user_id 
+    from 
+        movie_ratings 
+    where 
+        split == 'train'
+    ) as a 
+cross join 
+    (
+    select distinct 
+        item_id 
+    from 
+        movie_ratings 
+    where 
+        split == 'train'
+    ) as b
+left join
+    (
+    select 
+        user_id,
+        item_id,
+        rating,
+        rating - average_rating as centered_rating
+    from (
+        select 
+            user_id,
+            item_id,
+            rating
+        from 
+            movie_ratings 
+        where 
+            split == 'train'
+    ) a
+    left join (
+        select 
+            user_id, 
+            avg(rating) as average_rating
+        from 
+            movie_ratings 
+        where 
+            split == 'train'
+        group by user_id
+    ) b  
+    on a.user_id == b.user_id
+    ) c
+on 
+    a.user_id == c.user_id 
+and 
+    b.item_id == c.item_id
+order by 
+    user_id, item_id
+```
+
+To validate our work, we can see that the _movie_ratings_cross_join_ table has a number of records equal to the product between the number of users and the number of movies (10,000 = 100 x 100) and that the ratings now range from 0 to 5, where 0 denotes a missing rating.
+
+```
+SELECT
+    uniqExact(user_id) AS num_users,
+    uniqExact(item_id) AS num_items,
+    count(*) AS num_records,
+    min(rating) AS min_rating,
+    max(rating) AS max_rating
+FROM movie_ratings_cross_join
+
+Query id: 38900d1b-224d-4e27-9a5f-738be110871f
+
+┌─num_users─┬─num_items─┬─num_records─┬─min_rating─┬─max_rating─┐
+│       100 │       100 │       10000 │          0 │          5 │
+└───────────┴───────────┴─────────────┴────────────┴────────────┘
+
+1 row in set. Elapsed: 0.024 sec. Processed 28.34 thousand rows, 559.79 KB (1.16 million rows/s., 22.86 MB/s.)
+Peak memory usage: 725.81 KiB.
+```
+
+The ratings by movie after the cross join can be visualised.  Note that now we have 100 ratings for each user now that unrated movies have the zero assigned.
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/cfc284ee-33d2-40c8-8dc3-a0096d085220/latest?embedded=true&embeddedStaticCellId=1243db96-ece1-47d1-b32b-69cfe3c0bf36" ></iframe>
+</div>
+
+
+Next, we can now use the _movie_ratings_cross_join_ table to calculate the cosine similarity between each pair of users using the ClickHouse _cosineDistance_ function.  
+
+For each user, we keep only the 10 most similar users, which we will later use for calculating the predicted ratings.
+
+```
+create or replace view 
+    movie_ratings_similarity
+as select
+    user1,
+    user2,
+    item1 as item,
+    rating1,
+    rating2,
+    similarity
+from
+(
+    select
+        a.user_id as user1,
+        b.user_id as user2,
+        a.item_id as item1,
+        b.item_id as item2,
+        a.rating as rating1,
+        b.rating as rating2
+    from
+        movie_ratings_cross_join as a 
+    left join
+        movie_ratings_cross_join as b
+    on 
+        a.item_id == b.item_id
+    where 
+        user1 != user2
+) c
+inner join
+(
+    select
+        a.user_id as user1,
+        b.user_id as user2,
+        1 - cosineDistance(groupArray(toFloat32(a.centered_rating)), groupArray(toFloat32(b.centered_rating))) as similarity,
+        ROW_NUMBER() over (partition by user1 order by similarity desc) as rank
+    from
+        movie_ratings_cross_join as a 
+    left join
+        movie_ratings_cross_join as b
+    on 
+        a.item_id == b.item_id
+    where 
+        user1 != user2
+    group by 
+        user1, user2
+) d
+on c.user1 == d.user1 and c.user2 == d.user2
+where d.rank <= 10
+order by user1, user2, item
+```
+
+The _movie_ratings_similarity_ view takes the following format.  It shows for each item, the rating given by user 1 and 2 and the overall similarity of the users.  In the example below, we can see that user 1 and user 59 have a similarity score of 0.411 in a range of 0-1.  
+
+```
+SELECT *
+FROM movie_ratings_similarity
+LIMIT 10
+
+Query id: ebf2ed0d-d417-4666-a56c-26383ff79894
+
+┌─user1─┬─user2─┬─item─┬─rating1─┬─rating2─┬──────────similarity─┐
+│     1 │    59 │    1 │       5 │       2 │ 0.41149061918258667 │
+│     1 │    59 │    7 │       4 │       4 │ 0.41149061918258667 │
+│     1 │    59 │    8 │       0 │       0 │ 0.41149061918258667 │
+│     1 │    59 │    9 │       5 │       4 │ 0.41149061918258667 │
+│     1 │    59 │   11 │       0 │       5 │ 0.41149061918258667 │
+│     1 │    59 │   12 │       0 │       5 │ 0.41149061918258667 │
+│     1 │    59 │   15 │       5 │       5 │ 0.41149061918258667 │
+│     1 │    59 │   22 │       4 │       0 │ 0.41149061918258667 │
+│     1 │    59 │   25 │       4 │       4 │ 0.41149061918258667 │
+│     1 │    59 │   28 │       4 │       5 │ 0.41149061918258667 │
+└───────┴───────┴──────┴─────────┴─────────┴─────────────────────┘
+
+10 rows in set. Elapsed: 0.232 sec. Processed 113.38 thousand rows, 2.30 MB (489.29 thousand rows/s., 9.91 MB/s.)
+Peak memory usage: 60.11 MiB.
+```
+
+We now predict the missing ratings of each user with the weighted average ratings of the identified 10 most similar users, where the weights used for calculating the average are the cosine similarities. 
+
+We then recommend to each user the 5 unrated items with the highest predicted rating.
+
+```
+create or replace view 
+    movie_ratings_predictions
+as select
+    user_id,
+    item as recommended_item,
+    predicted_rating
+from
+(
+    select 
+        a.user1 as user_id,
+        a.item as item,
+        if(a.rating1 == 0, b.predicted_rating, 0) as predicted_rating,
+        ROW_NUMBER() over (partition by user_id order by predicted_rating desc) as rank
+    from
+    (
+        select distinct
+            user1,
+            item,
+            rating1
+        from 
+            movie_ratings_similarity
+    ) a
+    inner join (
+        select 
+            user1,
+            item,
+            sum(rating2 * similarity) / sum(similarity) as predicted_rating
+        from 
+            movie_ratings_similarity    
+        group by user1, item
+        order by user1, item
+    ) b 
+    on a.user1 == b.user1 and a.item == b.item
+    order by user_id, item, predicted_rating
+)
+where rank <= 5 
+```
+
+This gives us a set of recommendations and a predicted movie rating.  For instance, here we are predicting that user id 1 will rate item 50 with a score of 4.3, so therefore we should make that reccomendation.
+
+```
+SELECT *
+FROM movie_ratings_predictions
+LIMIT 10
+
+Query id: c93a21a1-02e4-4f24-96e8-7969d92d345c
+
+┌─user_id─┬─recommended_item─┬───predicted_rating─┐
+│       1 │               50 │  4.372684176791281 │
+│       1 │               56 │ 3.8474884773179414 │
+│       1 │               98 │   3.44652902154443 │
+│       1 │              121 │  3.785046216773683 │
+│       1 │              318 │ 3.7513909469946256 │
+│       7 │               28 │  3.169190882058359 │
+│       7 │               79 │  3.273510466069049 │
+│       7 │              173 │   3.56650696103535 │
+│       7 │              174 │ 3.2224608660511267 │
+│       7 │              276 │ 2.8857864008964325 │
+└─────────┴──────────────────┴────────────────────┘
+
+10 rows in set. Elapsed: 0.461 sec. Processed 226.75 thousand rows, 4.54 MB (491.85 thousand rows/s., 9.84 MB/s.)
+Peak memory usage: 77.74 MiB.
+```
+
+## Validating The Results
+
+Finally, we can run some checks on the data in ClickHouse to see how the recommendations we suggest compare with the actual observations in our test dataset.
+
+Remember that our test dataset was split from our original dataset and consists of real ratings of real movies.  Our aim therefore is to compare our predicted ratings with the users actual ratings.  
+
+We will join the predicted and actual results like this:
+
+```
+SELECT
+    a.user_id,
+    a.recommended_item AS item_id,
+    b.rating AS actual_rating,
+    a.predicted_rating AS predicted_rating
+FROM movie_ratings_predictions AS a
+LEFT JOIN
+(
+    SELECT
+        user_id,
+        item_id,
+        rating
+    FROM movie_ratings
+    WHERE split = 'test'
+) AS b ON (a.user_id = b.user_id) AND (a.recommended_item = b.item_id)
+LIMIT 10
+
+Query id: 5cccaef6-ef79-428a-b869-2c26dbfceeeb
+
+┌─user_id─┬─item_id─┬─actual_rating─┬───predicted_rating─┐
+│       1 │      50 │             5 │  4.372684176791281 │
+│       1 │      56 │             4 │ 3.8474884773179414 │
+│       1 │      98 │             4 │   3.44652902154443 │
+│       1 │     121 │             4 │  3.785046216773683 │
+│       1 │     318 │             0 │ 3.7513909469946256 │
+│       7 │      28 │             5 │  3.169190882058359 │
+│       7 │      79 │             4 │  3.273510466069049 │
+│       7 │     173 │             5 │   3.56650696103535 │
+│       7 │     174 │             5 │ 3.2224608660511267 │
+│       7 │     276 │             0 │ 2.8857864008964325 │
+└─────────┴─────────┴───────────────┴────────────────────┘
+
+10 rows in set. Elapsed: 0.446 sec. Processed 233.84 thousand rows, 4.72 MB (524.41 thousand rows/s., 10.58 MB/s.)
+Peak memory usage: 79.57 MiB.
+```
+
+In the table above, we can see that we predicted that user 1 would give item 50 a rating of 4.3, when it actual fact that they rated it is a 5.  Considering the fact that the users can only rate in terms of integers, this means that we effectively predicted that this particular user would like this particular movie in this instance.  
+
+## Evaluating The Performance
+
+Finally, lets evaluate our overall performance across the dataset.  To do this, we will use the mean absolute error (MAE) and root mean squared error (RMSE) measures.
+
+The MAE and RMSE calculated using only the items with non-missing ratings is approximately 1 rating point, which we think is fairly inpressive performance and a good basis to build a simple recommendation engine around.
+
+```
+dataframe_24 = dataframe_23[dataframe_23['actual_rating'] != 0]
+print(f'Mean Absolute Error (MAE): {format((dataframe_24["actual_rating"] - dataframe_24["predicted_rating"]).abs().mean(), ".2f")}')
+print(f'Root Mean Squared Error (RMSE): {format(((dataframe_24["actual_rating"] - dataframe_24["predicted_rating"]) ** 2).mean() ** 0.5, ".2f")}')
+Mean Absolute Error (MAE): 0.95
+Root Mean Squared Error (RMSE): 1.14
+```
+
+## In Summary
+
+This article has demonstrated another simple data science technique that has been implemented directly in ClickHouse using only SQL.  Just a few lines of Python were used at the end to conveniently evaluate our results.  
+
+In this case, we implemented a recommendation system which has performed relatively well, predicting movie ratings on a 1-5 scale with an error of 1.  
+
+Though these types of problems are often better solved in Python where there is arbitrary flexibility and the ability to use numerical processing and machine learning libraries, hopefully these articles are demonstrating that there is real potential to keep data science close to the database where it makes sense to do so.
+
+</Article>

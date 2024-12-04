@@ -1,0 +1,348 @@
+---
+title: Solving A Workforce Optimisation Problem With ClickHouse Cloud and Google OR-Tools
+description: As a professional services firm, we have a workforce allocation or optimisation problem.  In this article we demonstrate how to solve this problem using ClickHouse Cloud and Google OR-Tools.
+order: 99
+tag: Tools
+featured_image: 64.jpg
+date_published: 2024-02-07
+date_updated: 2024-02-07
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/d2533d92-bf53-4dee-b2b9-316f3d424ac3/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+In a [recent blog post](/blog/clickhouse-vehicle-route-planning) we looked into a data science problem involving optimising how to route delivery vehicles around the country in the most efficient way.
+
+We now wanted to look at second optimisation problem involving resource allocation.  In this instance we have a workforce of consultants who have different skills, and we need to allocate them to appropriate projects in order to use their time in the most efficient and profitable way.  
+
+As a professional services firm, this is a challenge that we experience at [Ensemble](/), and we are not alone!  Almost all businesses of any scale have this workforce allocation or optimisation problem, and solving it is very valuable where even a small increase in efficiency can lead to massive cost savings.  
+
+## Technology Used
+
+In both of our optimisation problems, we stored and retrieved our data from [ClickHouse Cloud](/why-clickhouse-cloud) which is well suited for operational analytics problems like this due to it's scalability and low latency and it's ability to process large volumes of granular data.
+
+We will again make use of Google's [OR-Tools framework](https://developers.google.com/optimization) which we use to run the core optimisation problem via Python.
+
+[Hex](https://hex.tech) will be our development which we use to develop the model against ClickHouse Cloud.  Hex allows us to move fluently between SQL and Python, making it excellent for developing solutions like this. 
+
+Typically, this type of data would then be exposed to managers through dashboards, reports, dedicated applications or even integration with an HR system such as Workday.  For the purposes of this article we will not demonstrate this step.  
+
+## About The Problem
+
+A consultancy firm needs to assign a set of projects to its principal consultants.  The consultants have different specializations, different hourly rates and different weekly availabilities. 
+
+The projects are in different fields (e.g. technology, compliance, HR, etc.) and have different weekly workloads. 
+
+Our aim will be to minimise our delivery cost, such that we can deliver the requested projects at the lowest possible cost.  We will however need to do this taking account of the following constraints:
+
+- All projects should be assigned to a consultant;
+- Each consultant can be assigned to only one project;
+- Each consultant can only work on projects in their field of specialization (e.g. a technology consultant should not be assigned to an HR project);
+- Each consultant's weekly workload cannot exceed their current weekly availability (e.g. a consultant who is currently available for 16 hours per week cannot take a project with a 40 hours per week workload).
+
+Solving the optimisation problem continually and with a big data set and considering these diverse constraints is not a simple exercise.  This is therefore a great demonstration of applied data science.
+
+## Exploratory Analysis
+
+Our source data has already been loaded into ClickHouse.  We can see that there are 20 consultants and 10 projects, and therefore not all consultants will be assigned to projects:
+
+```
+SELECT *
+FROM workforcedemo.employees
+
+Query id: 6755b536-9235-4147-8dd8-475b1b51f120
+
+┌─employee_id─┬─employee_name────┬─employee_field─┬─employee_hourly_rate─┬─employee_hours_per_week─┐
+│           1 │ Christine Hill   │ Technology     │                  200 │                      32 │
+│           2 │ William Gomez    │ Technology     │                  500 │                      32 │
+│           3 │ Benjamin Elliott │ Marketing      │                  400 │                      40 │
+│           4 │ William Oneill   │ Compliance     │                  400 │                      40 │
+│           5 │ Michael Johnson  │ Finance        │                  400 │                      24 │
+│           6 │ Jeremy Carter    │ Marketing      │                  200 │                      40 │
+│           7 │ Lisa Thompson    │ Marketing      │                  600 │                      16 │
+│           8 │ Michael Harris   │ HR             │                  200 │                      24 │
+│           9 │ Jeremy Kline     │ Compliance     │                  200 │                      24 │
+│          10 │ David Williamson │ Marketing      │                  200 │                      24 │
+│          11 │ Kevin Rivera     │ Technology     │                  500 │                      24 │
+│          12 │ Alex Travis      │ HR             │                  300 │                      32 │
+│          13 │ Stephanie Ward   │ HR             │                  400 │                      40 │
+│          14 │ Dylan Hunter     │ Technology     │                  300 │                      40 │
+│          15 │ Andrew Martin    │ Finance        │                  600 │                      16 │
+│          16 │ Tonya Sanchez    │ Technology     │                  300 │                      40 │
+│          17 │ Joseph Rivera    │ HR             │                  500 │                      32 │
+│          18 │ Maria Wagner     │ HR             │                  500 │                      24 │
+│          19 │ Nicole Fisher    │ Marketing      │                  600 │                      32 │
+│          20 │ Joseph Gilbert   │ Technology     │                  200 │                      32 │
+└─────────────┴──────────────────┴────────────────┴──────────────────────┴─────────────────────────┘
+
+20 rows in set. Elapsed: 0.002 sec.
+```
+
+
+```
+SELECT *
+FROM workforcedemo.projects
+
+Query id: fb92c937-ec18-4d58-bac3-e2d4d83e1e42
+
+┌─project_id─┬─project_name────────────────┬─project_field─┬─project_hours_per_week─┐
+│          1 │ Parker, Frederick and Glenn │ Technology    │                     24 │
+│          2 │ Garcia-Cross                │ HR            │                     32 │
+│          3 │ Morgan-Knight               │ Marketing     │                     16 │
+│          4 │ Young, Todd and Phillips    │ Marketing     │                     32 │
+│          5 │ Flores-Patel                │ HR            │                     24 │
+│          6 │ Davis PLC                   │ Technology    │                     24 │
+│          7 │ Bray, Beard and Morgan      │ HR            │                     16 │
+│          8 │ Clements-Perez              │ HR            │                     24 │
+│          9 │ Hanson-Crawford             │ Compliance    │                     32 │
+│         10 │ Palmer and Sons             │ Compliance    │                     24 │
+└────────────┴─────────────────────────────┴───────────────┴────────────────────────┘
+
+10 rows in set. Elapsed: 0.002 sec.
+```
+
+We can also visualise how much time our consultants have for each specialism, observing for instance that the business have much greater capacity to take on technology projects than they do finance projects:
+ 
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/d2533d92-bf53-4dee-b2b9-316f3d424ac3/latest?embedded=true&embeddedStaticCellId=d341fe83-774c-4970-ab74-f128bbbdf820" ></iframe>
+</div>
+
+
+The project workload can also be represented visually.  This surfaces the fact that Bray, Beard and Morgan are the biggest client, and most of the projects are related to the HR specialism:
+ 
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/d2533d92-bf53-4dee-b2b9-316f3d424ac3/latest?embedded=true&embeddedStaticCellId=733d6019-94e4-47e0-9236-6662a9529aff" ></iframe>
+</div>
+
+
+## Solving The Optimisation Problem 
+
+We will begin by calculating the cost matrix which contains the weekly cost of having a given consultant working on a given project.  The weekly cost is calculated as the consultant's hourly rate multiplied by the project's workload in hours per week. 
+
+We calculate the cost matrix for each consultant-project combination by performing a cross join betwen the employees table and the projects table.  We set the cost of a consultant working on a project outside their field of specialization equal to an unrealistically large number (1e16) such that these combinations are never selected as optimal.
+
+
+```
+create or replace view 
+    workforcedemo.cost_matrix 
+as select
+    a.employee_id as employee_id,
+    b.project_id as project_id,
+    if(a.employee_field == b.project_field, a.employee_hourly_rate * b.project_hours_per_week, 1e16) as cost
+from
+(
+    select 
+        employee_id,
+        employee_field,
+        employee_hourly_rate
+    from 
+        workforcedemo.employees 
+) a
+cross join 
+(
+    select 
+        project_id,
+        project_field,
+        project_hours_per_week
+    from 
+        workforcedemo.projects
+) b
+order by employee_id, project_id
+```
+
+We see that the cost_matrix table obtained from the cross join has 200 rows, which is equal to the number of consultants (20) multiplied by the number of projects (10).
+
+```
+SELECT count(*)
+FROM workforcedemo.cost_matrix
+
+Query id: 18278ee0-11e5-4bba-8d58-cbaedf90d920
+
+┌─count()─┐
+│     200 │
+└─────────┘
+
+1 row in set. Elapsed: 0.015 sec.
+```
+
+We now extract the cost matrix into a data frame such that it can be used by the optimizer.
+
+
+```
+cost_matrix = dataframe_6.pivot(index='employee_id', columns=['project_id'], values='cost')
+```
+
+We then create a data dictionary containing the cost matrix and all the other inputs required for defining the optimizer's constraints.
+
+```
+data = {}
+data['cost_matrix'] = cost_matrix.values.tolist()
+data['num_employees'] = cost_matrix.shape[0]
+data['num_projects'] = cost_matrix.shape[1]
+data['project_hours_per_week'] = dataframe_3['project_hours_per_week'].values.tolist()
+data['employee_hours_per_week'] = dataframe['employee_hours_per_week'].values.tolist()
+```
+
+With these two dataframes prepared, we can now solve the optimization using Google OR-Tools.  As with last time, we won't analyse the Python in too much depth here, but the main task is to define an _objective function_ which for us is the total weekly cost of all projects, and then use OR-Tools to find the combination of allocations that minimise the cost:
+
+```
+# instantiate the solver
+solver = pywraplp.Solver.CreateSolver('SCIP')
+
+# create a set of binary variables where each variable `x[employee, project]` is equal to 1 if `employee` is assigned to `project` and to 0 otherwise
+x = {}
+for employee in range(data['num_employees']):
+    for project in range(data['num_projects']):
+        x[employee, project] = solver.BoolVar(f"x[{employee},{project}]")
+
+# add a constraint to make sure that each project is assigned to a consultant
+for project in range(data['num_projects']):
+    solver.Add(solver.Sum(x[employee, project] for employee in range(data['num_employees'])) >= 1)
+
+# add a constraint to make sure that a given consultant is assigned to at most one project
+for employee in range(data['num_employees']):
+    solver.Add(solver.Sum(x[employee, project] for project in range(data['num_projects'])) <= 1)
+
+# add a constraint to make sure that each consultant's weekly workload does not exceed their current weekly availability
+for employee in range(data['num_employees']):
+    solver.Add(solver.Sum(int(data['project_hours_per_week'][project]) * x[employee, project] for project in range(data['num_projects'])) <= int(data['employee_hours_per_week'][employee]))
+
+# define the objective function as the total weekly cost of all projects
+objective_terms = []
+for employee in range(data['num_employees']):
+    for project in range(data['num_projects']):
+        objective_terms.append(x[employee, project] * int(data['cost_matrix'][employee][project]))
+
+# minimize the objective function
+solver.Minimize(sum(objective_terms))
+status = solver.Solve()
+print(status)
+```
+
+The solver has returned status 0, meaning that it has successfully found a solution. We can now organize the results in a data frame ready to be saved back into ClickHouse:
+
+
+```
+assignments = []
+for project in range(data['num_projects']):
+    for employee in range(data['num_employees']):
+        if x[employee, project].solution_value() > 0:
+            assignments.append({
+                'project_id': cost_matrix.columns[project],
+                'employee_id': cost_matrix.index[employee],
+                'cost': cost_matrix.iloc[employee, project],
+            })
+assignments = pd.DataFrame(assignments)
+```
+
+And serialise the dataframe back to the database like so:
+
+
+```
+client.command('''
+    drop table if exists workforcedemo.assignments sync
+''')
+
+client.command('''
+    create or replace table workforcedemo.assignments (
+        project_id Int32,
+        employee_id Int32,
+        cost Float32
+    ) engine MergeTree order by project_id 
+''')
+
+client.insert_df('workforcedemo.assignments', assignments)
+```
+
+The case assignments can then be queried directly within ClickHouse and exposed through a report, dashboard, or another front-end.
+
+```
+SELECT *
+FROM workforcedemo.employees_assignments
+
+Query id: 6b0541c4-4198-4299-af16-904273244f02
+
+┌─project_id─┬─employee_id─┬──cost─┐
+│          1 │          20 │  4800 │
+│          2 │          12 │  9600 │
+│          3 │          10 │  3200 │
+│          4 │           6 │  6400 │
+│          5 │           8 │  4800 │
+│          6 │           1 │  4800 │
+│          7 │          17 │  8000 │
+│          8 │          13 │  9600 │
+│          9 │           4 │ 12800 │
+│         10 │           9 │  4800 │
+└────────────┴─────────────┴───────┘
+
+10 rows in set. Elapsed: 0.002 sec.
+```
+
+Effectively, this tells the business how to allocate their consulants to projects in a way which minimises the cost of delivery.  
+
+## Validating The Results
+
+Finally, we can run some final checks on the data in ClickHouse to verify that the results are as expected. We can see that each project was assigned to a different consultant, that the selected consultants are working on a project in their field of specialization, and that each consultant's allocated workload does not exceed their availability.
+
+
+```
+SELECT
+    a.project_id AS project_id,
+    c.project_name AS project_name,
+    c.project_field AS project_field,
+    a.employee_id AS employee_id,
+    b.employee_name AS employee_name,
+    b.employee_field AS employee_field,
+    b.employee_hours_per_week AS employee_hours_per_week,
+    c.project_hours_per_week AS project_hours_per_week,
+    b.employee_hourly_rate AS employee_hourly_rate,
+    a.cost AS cost_per_week
+FROM workforcedemo.employees_assignments AS a
+LEFT JOIN workforcedemo.employees AS b ON a.employee_id = b.employee_id
+LEFT JOIN workforcedemo.projects AS c ON a.project_id = c.project_id
+
+Query id: 4c4e08ad-781a-4091-af56-72513ca39670
+
+┌─project_id─┬─project_name────────────────┬─project_field─┬─employee_id─┬─employee_name────┬─employee_field─┬─employee_hours_per_week─┬─project_hours_per_week─┬─employee_hourly_rate─┬─cost_per_week─┐
+│          1 │ Parker, Frederick and Glenn │ Technology    │          20 │ Joseph Gilbert   │ Technology     │                      32 │                     24 │                  200 │          4800 │
+│          2 │ Garcia-Cross                │ HR            │          12 │ Alex Travis      │ HR             │                      32 │                     32 │                  300 │          9600 │
+│          3 │ Morgan-Knight               │ Marketing     │          10 │ David Williamson │ Marketing      │                      24 │                     16 │                  200 │          3200 │
+│          4 │ Young, Todd and Phillips    │ Marketing     │           6 │ Jeremy Carter    │ Marketing      │                      40 │                     32 │                  200 │          6400 │
+│          5 │ Flores-Patel                │ HR            │           8 │ Michael Harris   │ HR             │                      24 │                     24 │                  200 │          4800 │
+│          6 │ Davis PLC                   │ Technology    │           1 │ Christine Hill   │ Technology     │                      32 │                     24 │                  200 │          4800 │
+│          7 │ Bray, Beard and Morgan      │ HR            │          17 │ Joseph Rivera    │ HR             │                      32 │                     16 │                  500 │          8000 │
+│          8 │ Clements-Perez              │ HR            │          13 │ Stephanie Ward   │ HR             │                      40 │                     24 │                  400 │          9600 │
+│          9 │ Hanson-Crawford             │ Compliance    │           4 │ William Oneill   │ Compliance     │                      40 │                     32 │                  400 │         12800 │
+│         10 │ Palmer and Sons             │ Compliance    │           9 │ Jeremy Kline     │ Compliance     │                      24 │                     24 │                  200 │          4800 │
+└────────────┴─────────────────────────────┴───────────────┴─────────────┴──────────────────┴────────────────┴─────────────────────────┴────────────────────────┴──────────────────────┴───────────────┘
+
+10 rows in set. Elapsed: 0.013 sec.
+```
+
+The employee-project combination and the weekly cost can be visualised showing that William Oneill working on the Hanson-Crawford project is our largest weekly cost.
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/d2533d92-bf53-4dee-b2b9-316f3d424ac3/latest?embedded=true&embeddedStaticCellId=2a2b231c-dafe-4cdb-8360-fbc211563913" ></iframe>
+</div>
+
+
+## Operational Analytics In Action
+
+Most businesses use data and analytics in a very simple and backwards looking way.  Using operational analytics to solve problems such as the above is therefore an area of huge potential.  
+
+Hopefully between this post and our [vehicle routing optimisation](/blog/clickhouse-vehicle-route-planning) example, we have demonstrated how combining pragmatic technology choices with a small amount of data science can quickly allow you to bring similar solutions into production in order to optimise your own business.  
+
+</Article>

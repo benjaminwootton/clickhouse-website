@@ -1,0 +1,555 @@
+---
+title: Calculating Value At Risk For An Equities Portfolio Using ClickHouse
+description: ClickHouse is increasingly being used by capital markets firms such as investment banks, hedge funds and trading technology vendors.
+date_published: 2024-03-08
+date_updated: 2024-03-08
+order: 10
+featured_image: 53.jpg
+tag: General
+ 
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/38d8fa51-44f0-4e03-a223-3f1b12a87e86/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+[ClickHouse](https://clickhouse.com) is increasingly being used by capital markets firms such as investment banks, hedge funds and trading technology vendors.  Common use cases include storing and processing time series data, recording details about events such as trades or quotes, and storing observability data such as application or FIX logs.
+
+Once this information has been captured in ClickHouse, it can then be used for multiple purposes.  This includes making it available to quants for market analysis and model building, operational uses such as investigating what happened with a particular trade, exposing it into trading applications for risk management and regulatory purposes such as evidencing that compliance rules were met.
+
+ClickHouse is one of few databases that can scale to meet the needs of use cases like this.  These workloads often require the ingestion of billions of time series oriented data points per day, and there is often a need to query this data with very low latency, high concurrency and total reliability.  These are the domains where ClickHouse shines.  
+ 
+## About This Example
+
+We wanted to show how ClickHouse could be used in a capital markets scenario.  Specifically, we are going to demonstrate calculating some return metrics over a series of stocks, before calculating a number of common risk metrics including the widely used Value At Risk (VAR) measure.
+
+Although in reality we would probably do this work in Python and possibly through a Jupyter notebook, we like to see how far we can push ClickHouse and SQL for analytics, taking advantage of ClickHouse native functions to reduce the amount of code and to keep processing close to the database.
+ 
+## About The Dataset
+
+We will use the historical time series of 120 stocks included in 4 different indices (NASDAQ 100, FTSE MIB, FTSE 100 and DAX) as the basis for our example. 
+
+We downloaded the daily close price time series of the stocks and of the indices from Yahoo Finance.  We then calculated their daily returns (as percentage changes) for convenience, and saved them into a ClickHouse table called equity.data.  The table has the following format:
+
+```
+SELECT *
+FROM equity.data
+LIMIT 10
+
+Query id: 7e243923-def1-4504-be2f-afd3d7f4a85c
+
+┌────────────────Date─┬─StockName───┬─StockTicker─┬─StockPrice─┬───StockReturn─┬─IndexName─┬─IndexTicker─┬─IndexPrice─┬────IndexReturn─┐
+│ 2023-03-07 00:00:00 │ Covestro AG │ 1COV.DE     │      39.62 │    0.01641866 │ DAX       │ ^GDAXI      │   15559.53 │  -0.0060081976 │
+│ 2023-03-08 00:00:00 │ Covestro AG │ 1COV.DE     │      39.97 │    0.00883398 │ DAX       │ ^GDAXI      │   15631.87 │   0.0046492307 │
+│ 2023-03-09 00:00:00 │ Covestro AG │ 1COV.DE     │      39.71 │  -0.006504932 │ DAX       │ ^GDAXI      │   15633.21 │ 0.000085712316 │
+│ 2023-03-10 00:00:00 │ Covestro AG │ 1COV.DE     │      38.61 │  -0.027700793 │ DAX       │ ^GDAXI      │   15427.97 │   -0.013128477 │
+│ 2023-03-13 00:00:00 │ Covestro AG │ 1COV.DE     │      36.62 │  -0.051541094 │ DAX       │ ^GDAXI      │   14959.47 │   -0.030366926 │
+│ 2023-03-14 00:00:00 │ Covestro AG │ 1COV.DE     │      36.65 │ 0.00081929535 │ DAX       │ ^GDAXI      │   15232.83 │    0.018273398 │
+│ 2023-03-15 00:00:00 │ Covestro AG │ 1COV.DE     │      35.36 │   -0.03519784 │ DAX       │ ^GDAXI      │   14735.26 │    -0.03266434 │
+│ 2023-03-16 00:00:00 │ Covestro AG │ 1COV.DE     │      36.33 │    0.02743216 │ DAX       │ ^GDAXI      │    14967.1 │    0.015733678 │
+│ 2023-03-17 00:00:00 │ Covestro AG │ 1COV.DE     │      36.85 │  0.0143131465 │ DAX       │ ^GDAXI      │    14768.2 │   -0.013289109 │
+│ 2023-03-20 00:00:00 │ Covestro AG │ 1COV.DE     │      37.13 │  0.0075984425 │ DAX       │ ^GDAXI      │   14933.38 │    0.011184822 │
+└─────────────────────┴─────────────┴─────────────┴────────────┴───────────────┴───────────┴─────────────┴────────────┴────────────────┘
+
+10 rows in set. Elapsed: 0.004 sec. Processed 8.19 thousand rows, 737.28 KB (2.11 million rows/s., 190.09 MB/s.)
+Peak memory usage: 2.43 MiB.
+```
+
+There are 30 stocks in each index, and the time series span 250 trading between the 7th of March 2023 to the 22nd of February 2024:
+
+```
+SELECT
+    IndexName,
+    uniqExact(StockTicker) AS NumStocks,
+    uniqExact(Date) AS NumDates,
+    min(Date) AS StartDate,
+    max(Date) AS EndDate
+FROM equity.data
+GROUP BY IndexName
+
+Query id: c49625fa-6125-4288-b4ee-225f8a6f77e4
+
+┌─IndexName──┬─NumStocks─┬─NumDates─┬───────────StartDate─┬─────────────EndDate─┐
+│ DAX        │        30 │      250 │ 2023-03-07 00:00:00 │ 2024-02-22 00:00:00 │
+│ FTSE 100   │        30 │      250 │ 2023-03-07 00:00:00 │ 2024-02-22 00:00:00 │
+│ FTSE MIB   │        30 │      250 │ 2023-03-07 00:00:00 │ 2024-02-22 00:00:00 │
+│ NASDAQ 100 │        30 │      250 │ 2023-03-07 00:00:00 │ 2024-02-22 00:00:00 │
+└────────────┴───────────┴──────────┴─────────────────────┴─────────────────────┘
+
+4 rows in set. Elapsed: 0.065 sec. Processed 30.00 thousand rows, 1.04 MB (461.70 thousand rows/s., 15.94 MB/s.)
+Peak memory usage: 702.61 KiB.
+```
+
+When plotted, the time series for the 4 indexes are as follows:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=f35fd56b-7def-4b57-bed1-91a398b38734" ></iframe>
+</div>
+
+
+## Calculating The Cumulative Returns
+
+We begin by calculating the cumulative return of each index as the percentage difference between the first and the last price over the considered time period. 
+
+We use ClickHouse _first_value_ and _last_value_ aggregate functions for finding the first and last price of each index, after making sure to sort the underlying table by index name and  date:
+
+```
+SELECT
+    IndexName,
+    (last_value(IndexPrice) - first_value(IndexPrice)) / first_value(IndexPrice) AS IndexCumulativeReturn
+FROM
+(
+    SELECT
+        IndexName,
+        IndexPrice
+    FROM equity.data
+    ORDER BY
+        IndexName ASC,
+        Date ASC
+)
+GROUP BY IndexName
+
+Query id: 5b8153a7-2c49-4ae0-b9e0-6af680fbde31
+
+┌─IndexName──┬─IndexCumulativeReturn─┐
+│ DAX        │   0.11602270488488674 │
+│ FTSE 100   │ -0.029664773758602183 │
+│ FTSE MIB   │   0.16783550244038614 │
+│ NASDAQ 100 │   0.43833654965492114 │
+└────────────┴───────────────────────┘
+
+4 rows in set. Elapsed: 0.007 sec. Processed 30.00 thousand rows, 727.50 KB (4.57 million rows/s., 110.75 MB/s.)
+Peak memory usage: 46.04 KiB.
+```
+
+This shows that the NASDAQ 100 increased by a remarkable 43% in the period. 
+
+We can likewise calculate the cumulative returns of individual stocks to identify the ones with the best performance over the considered 250 days period:
+
+```
+SELECT
+    StockName,
+    (last_value(StockPrice) - first_value(StockPrice)) / first_value(StockPrice) AS StockCumulativeReturn
+FROM
+(
+    SELECT
+        StockName,
+        StockPrice
+    FROM equity.data
+    ORDER BY
+        StockName ASC,
+        Date ASC
+)
+GROUP BY StockName
+ORDER BY StockCumulativeReturn DESC
+LIMIT 10
+
+Query id: 3e6baaf3-8eb5-4035-acf1-2d578cd2f0a0
+
+┌─StockName────────────────────────┬─StockCumulativeReturn─┐
+│ Meta Platforms, Inc.             │    1.5366105507198244 │
+│ Rolls-Royce Holdings plc         │    1.3448205583055513 │
+│ Zscaler, Inc.                    │    0.8147268676046956 │
+│ Leonardo S.p.a.                  │    0.7574642864965502 │
+│ Constellation Energy Corporation │    0.6867778090200988 │
+│ Datadog, Inc.                    │    0.6819031923438486 │
+│ Applied Materials, Inc.          │    0.6355589699996375 │
+│ UniCredit S.p.A.                 │    0.6060574411384445 │
+│ Marvell Technology, Inc.         │    0.5937726993506385 │
+│ Intuit Inc.                      │    0.5594566351628794 │
+└──────────────────────────────────┴───────────────────────┘
+
+10 rows in set. Elapsed: 0.009 sec. Processed 30.00 thousand rows, 1.07 MB (3.44 million rows/s., 122.40 MB/s.)
+Peak memory usage: 701.87 KiB.
+```
+
+This can be visualised in the following way:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=8ca05c76-7e2e-476b-a5d4-4d861c7c1260" ></iframe>
+</div>
+
+
+The worst performing stocks were:
+
+```
+select 
+    StockName,
+    (last_value(StockPrice) - first_value(StockPrice)) / first_value(StockPrice) as StockCumulativeReturn
+from (
+    select 
+        StockName, 
+        StockPrice 
+    from 
+        equity.data 
+    order by 
+        StockName, 
+        Date
+)
+group by 
+    StockName
+order by
+    StockCumulativeReturn asc
+limit 10
+```
+
+Which can be visualised like this:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=cb704aec-f761-4654-831c-14634bd86a5d" ></iframe>
+</div>
+
+
+## Calculating The Risk Indicators
+
+We will now calculate a set of standard risk indicators using the same dataset:
+
+- The *expected return*, which is the sample average of the stock and index returns. 
+- The *volatility*, which is the sample standard deviation of the stock and the index returns. 
+- The *alpha* of each stock to its corresponding index, which measures the excess return of the stock over the index returns.
+- The *beta* of each stock to its corresponding index, which measures the sensitivity the stock returns to the index returns.
+- The linear *correlation coefficient*, which measures the co-movements between the stock returns and the index returns.
+
+As the math is simple, all of these measures can be derived using a simple view:
+
+```
+create or replace view 
+    equity.parameters 
+as select
+    StockName,
+    StockTicker,
+    IndexName,
+    IndexTicker,
+    avg(StockReturn) as StockExpectedReturn,
+    stddevSamp(StockReturn) as StockVolatility,
+    avg(IndexReturn) as IndexExpectedReturn,
+    stddevSamp(IndexReturn) as IndexVolatility,
+    StockExpectedReturn - StockBeta * IndexExpectedReturn as StockAlpha,
+    covarSamp(IndexReturn, StockReturn) / varSamp(IndexReturn) as StockBeta,
+    corr(IndexReturn, StockReturn) as StockIndexCorrelation
+from 
+    equity.data
+group by 
+    StockName,
+    StockTicker,
+    IndexName,
+    IndexTicker
+```
+
+The expected return is an average of the stocks daily returns, and we make use the ClickHouse _stddevSamp_ as a measure of volatility.  
+
+The alpha and beta measure the relationship of the stock returns to the index returns.  
+
+The *alpha* of each stock measures the excess return of the stock over the index returns, whilst the *beta* measures the sensitivity the stock returns to the index returns.  
+
+The alpha and beta are respectively the intercept and coefficient of a linear regression of the stock returns on the index returns. We calculate the alpha and beta using the closed-form formulas of their least squares estimators. 
+
+All the statistical functions required for these calculations (the sample [mean](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference/avg), [variance](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference/varsamp), [covariance](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference/covarsamp) and [correlation](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference/corr)) are available in ClickHouse.
+
+The derived view contains data in the following format:
+
+```
+SELECT *
+FROM equity.parameters
+LIMIT 10
+
+Query id: f48ee2ec-f0c6-41c9-bc59-b6733b8e0879
+
+┌─StockName───────────────────────┬─StockTicker─┬─IndexName──┬─IndexTicker─┬─────StockExpectedReturn─┬─StockVolatility─┬─────IndexExpectedReturn─┬─IndexVolatility─┬──────────────StockAlpha─┬──────────StockBeta─┬─StockIndexCorrelation─┐
+│ Prysmian S.p.A.                 │ PRY.MI      │ FTSE MIB   │ FTSEMIB.MI  │   0.0007922597869765013 │     0.017181022 │   0.0006399495963996742 │     0.009592688 │  0.00005173166577156782 │  1.157166322740274 │            0.64608115 │
+│ Covestro AG                     │ 1COV.DE     │ DAX        │ ^GDAXI      │   0.0010118026832351462 │     0.019694429 │   0.0004455127230321523 │    0.0078082266 │   0.0005732017754290465 │ 0.9844857063138155 │            0.39031786 │
+│ Auto Trader Group plc           │ AUTO.L      │ FTSE 100   │ ^FTSE       │    0.000955218335147947 │     0.014037287 │ -0.00009883603751586634 │      0.00732512 │   0.0010497236067764817 │ 0.9561823197673587 │            0.49896753 │
+│ Zscaler, Inc.                   │ ZS          │ NASDAQ 100 │ ^NDX        │        0.00279001699941 │     0.030809827 │   0.0014583042294252664 │     0.010279597 │  0.00040987693518947403 │  1.632128616371472 │            0.54455435 │
+│ Texas Instruments Incorporated  │ TXN         │ NASDAQ 100 │ ^NDX        │ -0.00010847256564011332 │    0.0144831855 │   0.0014583042294252664 │     0.010279597 │   -0.001404542446487763 │ 0.8887513693616899 │            0.63080084 │
+│ British American Tobacco p.l.c. │ BATS.L      │ FTSE 100   │ ^FTSE       │   -0.001011158231762238 │     0.013381846 │ -0.00009883603751586634 │      0.00732512 │  -0.0009377924735532065 │ 0.7422976482363925 │            0.40632802 │
+│ Banca Mediolanum S.p.A.         │ BMED.MI     │ FTSE MIB   │ FTSEMIB.MI  │  0.00027498087083222347 │     0.013980779 │   0.0006399495963996742 │     0.009592688 │ -0.00046044469020185776 │ 1.1491929445249285 │             0.7885004 │
+│ Meta Platforms, Inc.            │ META        │ NASDAQ 100 │ ^NDX        │    0.003975486515264493 │     0.023137426 │   0.0014583042294252664 │     0.010279597 │   0.0017717275613158838 │ 1.5111791555436511 │            0.67139333 │
+│ SSE plc                         │ SSE.L       │ FTSE 100   │ ^FTSE       │ -0.00023646333219949156 │    0.0118765505 │ -0.00009883603751586634 │      0.00732512 │ -0.00017018188829551878 │ 0.6706202066562259 │             0.4136195 │
+│ Fortinet, Inc.                  │ FTNT        │ NASDAQ 100 │ ^NDX        │    0.000584812129905913 │      0.02462503 │   0.0014583042294252664 │     0.010279597 │  -0.0008214978024858182 │ 0.9643460562039056 │             0.4025615 │
+└─────────────────────────────────┴─────────────┴────────────┴─────────────┴─────────────────────────┴─────────────────┴─────────────────────────┴─────────────────┴─────────────────────────┴────────────────────┴───────────────────────┘
+
+10 rows in set. Elapsed: 0.012 sec. Processed 30.00 thousand rows, 2.44 MB (2.49 million rows/s., 202.79 MB/s.)
+Peak memory usage: 1.37 MiB.
+```
+
+We can now use the results to identify the riskiest stocks, which are the ones that are more volatile and more exposed to general market movements (i.e. with higher betas).
+
+```
+SELECT
+    StockName,
+    StockVolatility
+FROM equity.parameters
+ORDER BY StockVolatility DESC
+LIMIT 10
+
+Query id: 23dc6631-3d93-48d9-8291-2e6f3cb1b979
+
+┌─StockName────────────────┬─StockVolatility─┐
+│ Siemens Energy AG        │     0.043124344 │
+│ Sirius XM Holdings Inc.  │     0.041757215 │
+│ Datadog, Inc.            │      0.03418237 │
+│ Marvell Technology, Inc. │     0.032919433 │
+│ Zscaler, Inc.            │     0.030809827 │
+│ Tesla, Inc.              │     0.029991485 │
+│ Moderna, Inc.            │     0.029663702 │
+│ Zalando SE               │     0.027911186 │
+│ Illumina, Inc.           │     0.027771011 │
+│ Saipem SpA               │     0.026004184 │
+└──────────────────────────┴─────────────────┘
+
+10 rows in set. Elapsed: 0.011 sec. Processed 30.00 thousand rows, 2.32 MB (2.71 million rows/s., 209.63 MB/s.)
+Peak memory usage: 1.14 MiB.
+```
+
+Visualised as:
+ 
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=7a510b39-d574-42f7-a644-1dac98e54d17" ></iframe>
+</div>
+
+
+## Measuring The Relationship Between Stock And Index Returns
+
+From a risk perspective, it is useful to understand the exposure of the individual stock to the overall market risk (as represented by the index in this case).  This is sometimes referred to as the _capital asset pricing model_.  
+
+We can plot the daily stock returns vs the index returns in an attempt to measure the co-movements between the two variables, deriving a linear regression to better understand the relationship: 
+
+```
+SELECT
+    StockName,
+    StockReturn,
+    IndexReturn,
+    StockAlpha + (StockBeta * IndexReturn) AS RegressionLine
+FROM
+(
+    SELECT
+        StockName,
+        StockAlpha,
+        StockBeta
+    FROM equity.parameters
+    WHERE StockName = 'Siemens Energy AG'
+) AS a
+LEFT JOIN
+(
+    SELECT
+        StockName,
+        StockReturn,
+        IndexReturn
+    FROM equity.data
+    WHERE StockName = 'Siemens Energy AG'
+) AS b ON a.StockName = b.StockName
+LIMIT 10
+
+Query id: 1ea89ad7-6dc2-44b6-b4f8-2fd8779b7c60
+
+┌─StockName─────────┬───StockReturn─┬───IndexReturn─┬────────RegressionLine─┐
+│ Siemens Energy AG │  -0.016065193 │ -0.0060081976 │ -0.014893931263994761 │
+│ Siemens Energy AG │   0.007556642 │ -0.0014709962 │ -0.004711374893341622 │
+│ Siemens Energy AG │  -0.040714264 │ -0.0013942029 │ -0.004539032618970841 │
+│ Siemens Energy AG │    0.03350706 │  0.0029111907 │  0.005123292269217131 │
+│ Siemens Energy AG │ -0.0003602388 │   0.014409873 │   0.03092906278216695 │
+│ Siemens Energy AG │  -0.032011136 │  0.0024742486 │ 0.0041426905435039876 │
+│ Siemens Energy AG │  -0.013659208 │  -0.002200569 │ -0.006348709451057952 │
+│ Siemens Energy AG │    0.05721573 │  0.0065488797 │   0.01328712931258977 │
+│ Siemens Energy AG │   -0.02137197 │  -0.009186847 │  -0.02202757509213875 │
+│ Siemens Energy AG │  -0.008101428 │   0.003829811 │  0.007184894097954992 │
+└───────────────────┴───────────────┴───────────────┴───────────────────────┘
+
+10 rows in set. Elapsed: 0.014 sec. Processed 60.00 thousand rows, 2.13 MB (4.35 million rows/s., 154.40 MB/s.)
+Peak memory usage: 2.06 MiB.
+```
+
+Visualised as:
+ 
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=b1c24487-ef68-4fb6-8178-7e9d08098fbc" ></iframe>
+</div>
+
+
+## Calculating Value At Risk
+
+Lastly, we calculate the *Value-at-Risk* (VaR) which aims to caculate the largest possible loss over a specific time frame.  For our purposes, we will calculate the 10-day 99% VaR, i.e. we aim to capture the largest loss that should occur over a 10-day period with 1% probability. 
+
+For simplicity, we will calculate the VaR directly on the returns and we don't assume any specific trades or positions on the stocks. 
+
+We will implement two different VaR models: the *parameteric VaR* (also referred to as *variance-covariance* method) and the *nonparametric VaR* (also referred to as *historical simulations* method). 
+
+The parametric VaR model assumes that the returns are normally distributed, and estimates the VaR as the 1% percentile of the normal distribution. 
+
+The nonparametric VaR does not make any assumptions on the distribution of the returns, and estimates the VaR using the empirical 1% percentile, which we implement using ClickHouse [_quantileExact_](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference/quantileexact#quantileexact) function. 
+
+These will be exposed using a _value_at_risk_ view.
+
+```
+create or replace view 
+    equity.value_at_risk
+as select
+    a.Date,
+    a.StockName,
+    a.StockTicker,
+    a.StockReturn,
+    b.NonparametricVaR,
+    b.ParametricVaR
+from 
+    equity.data a
+left join (
+    select 
+        Date,
+        StockName,
+        avg(StockReturn) over (partition by StockName order by Date rows between 10 preceding and current row) as RollingMean,
+        stddevSamp(StockReturn) over (partition by StockName order by Date rows between 10 preceding and current row) as RollingVolatility,
+        RollingMean - 2.33 * RollingVolatility as ParametricVaR,
+        quantileExact(0.01)(StockReturn) over (partition by StockName order by Date rows between 10 preceding and current row) as NonparametricVaR
+    from 
+        equity.data
+) b
+on a.Date == b.Date and a.StockName == b.StockName
+```
+
+The view contains data in the following format:
+
+```
+SELECT *
+FROM equity.value_at_risk
+LIMIT 10
+
+Query id: b0b58d56-426c-4425-af38-03f67793e1d0
+
+┌────────────────Date─┬─StockName───┬─StockTicker─┬───StockReturn─┬─NonparametricVaR─┬──────────ParametricVaR─┐
+│ 2023-03-07 00:00:00 │ Covestro AG │ 1COV.DE     │    0.01641866 │       0.01641866 │                    nan │
+│ 2023-03-08 00:00:00 │ Covestro AG │ 1COV.DE     │    0.00883398 │       0.00883398 │ 0.00013011218979954754 │
+│ 2023-03-09 00:00:00 │ Covestro AG │ 1COV.DE     │  -0.006504932 │     -0.006504932 │  -0.020961278540392717 │
+│ 2023-03-10 00:00:00 │ Covestro AG │ 1COV.DE     │  -0.027700793 │     -0.027700793 │   -0.04760292564984411 │
+│ 2023-03-13 00:00:00 │ Covestro AG │ 1COV.DE     │  -0.051541094 │     -0.051541094 │   -0.07677296726033092 │
+│ 2023-03-14 00:00:00 │ Covestro AG │ 1COV.DE     │ 0.00081929535 │     -0.051541094 │   -0.06908284677386595 │
+│ 2023-03-15 00:00:00 │ Covestro AG │ 1COV.DE     │   -0.03519784 │     -0.051541094 │   -0.07193877093128062 │
+│ 2023-03-16 00:00:00 │ Covestro AG │ 1COV.DE     │    0.02743216 │     -0.051541094 │   -0.07216251223959262 │
+│ 2023-03-17 00:00:00 │ Covestro AG │ 1COV.DE     │  0.0143131465 │     -0.051541094 │   -0.06808109128356186 │
+│ 2023-03-20 00:00:00 │ Covestro AG │ 1COV.DE     │  0.0075984425 │     -0.051541094 │   -0.06401301008765586 │
+└─────────────────────┴─────────────┴─────────────┴───────────────┴──────────────────┴────────────────────────┘
+
+10 rows in set. Elapsed: 0.037 sec. Processed 60.00 thousand rows, 2.56 MB (1.62 million rows/s., 68.92 MB/s.)
+Peak memory usage: 10.10 MiB.
+```
+
+For a given stock, in this case AstraZeneca, we can visualise the parametrics and non parametric VaR over time.  We can see how after a large drop in the stock price similar to the one on the 1st July, the VaR spikes for an approximately 10 day window.
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/38d8fa51-44f0-4e03-a223-3f1b12a87e86/latest?embedded=true&embeddedStaticCellId=1ca4e14b-6281-4374-9f37-47914c755423" ></iframe>
+</div>
+
+
+## Validating Performance
+
+Finally, we can backtest the two VaR models to measure their performance.  We will do this by calculating the number of times that the VaR was exceeded over the 250 day period.  We will do this with an _exceptions_ view:
+
+```
+create or replace view 
+    equity.exceptions
+as select
+    StockName,
+    StockTicker,
+    Model,
+    Exceptions
+from (
+    select 
+        StockName,  
+        StockTicker,
+        'NonparametricVaR' as Model,
+        sum(if(StockReturn < NonparametricVaR, 1, 0)) as Exceptions
+    from 
+        equity.value_at_risk
+    group by
+        StockName, StockTicker
+) 
+union all (
+    select 
+        StockName,  
+        StockTicker,
+        'ParametricVaR' as Model,
+        sum(if(StockReturn < ParametricVaR, 1, 0)) as Exceptions
+    from 
+        equity.value_at_risk
+    group by
+        StockName, StockTicker
+) 
+```
+
+The created view has the following format:
+
+```
+SELECT *
+FROM equity.exceptions
+ORDER BY StockName ASC
+LIMIT 10
+
+Query id: 42e05510-18c3-4a6a-bde2-203985d8acdd
+
+┌─StockName─────────┬─StockTicker─┬─Model────────────┬─Exceptions─┐
+│ Airbus SE         │ AIR.DE      │ NonparametricVaR │          0 │
+│ Airbus SE         │ AIR.DE      │ ParametricVaR    │          2 │
+│ Airtel Africa Plc │ AAF.L       │ NonparametricVaR │          0 │
+│ Airtel Africa Plc │ AAF.L       │ ParametricVaR    │          2 │
+│ Allianz SE        │ ALV.DE      │ NonparametricVaR │          0 │
+│ Allianz SE        │ ALV.DE      │ ParametricVaR    │          3 │
+│ Amgen Inc.        │ AMGN        │ NonparametricVaR │          0 │
+│ Amgen Inc.        │ AMGN        │ ParametricVaR    │          1 │
+│ Amplifon S.p.A.   │ AMP.MI      │ NonparametricVaR │          0 │
+│ Amplifon S.p.A.   │ AMP.MI      │ ParametricVaR    │          0 │
+└───────────────────┴─────────────┴──────────────────┴────────────┘
+
+10 rows in set. Elapsed: 0.082 sec. Processed 120.00 thousand rows, 5.12 MB (1.46 million rows/s., 62.49 MB/s.)
+Peak memory usage: 19.59 MiB.
+```
+
+We see that both VaR models peform well, as both of them have fewer than 10 VaR exceptions over the last 250 days.
+
+```
+SELECT
+    Model,
+    sum(if(Exceptions <= 4, 1, 0)) AS Green,
+    sum(if((5 <= Exceptions) <= 9, 1, 0)) AS Amber,
+    sum(if(Exceptions >= 10, 1, 0)) AS Red
+FROM equity.exceptions
+GROUP BY Model
+
+Query id: c2f1de83-b8cf-4edc-af05-7d8f1b222013
+
+┌─Model────────────┬─Green─┬─Amber─┬─Red─┐
+│ NonparametricVaR │   120 │   120 │   0 │
+│ ParametricVaR    │   116 │   120 │   0 │
+└──────────────────┴───────┴───────┴─────┘
+
+2 rows in set. Elapsed: 0.043 sec. Processed 120.00 thousand rows, 5.12 MB (2.76 million rows/s., 117.75 MB/s.)
+Peak memory usage: 15.59 MiB.
+```
+
+## Conclusion
+
+In this article we have demonstrated working with some equities data, initially to calculate returns before moving on to calculate various risk metrics including Parametric and NonParametric Value At Risk (VaR).
+
+Again, these models were developed purely in ClickHouse SQL, totally avoiding the need for Python.  Though we would not claim SQL is the perfect language for these types of analytics, this shows the potential for keeping analytics close to the database and using the powerful analytical functions of ClickHouse in order to simplify the technology stack and reduce the movement of data.
+
+Because ClickHouse is very fast, and the math is very simple, it would be possible to perform calculations like this over large datasets, frequently and over real-time fresh data.   
+
+If you are interested in using ClickHouse to power your quantitative or trade analytics, please get in touch with us for an informal discussion.
+
+## Sample Notebook
+
+A notebook describing the full worked example can be found at [this URL](https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/38d8fa51-44f0-4e03-a223-3f1b12a87e86/draft/logic).
+
+</Article>

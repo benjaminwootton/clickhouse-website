@@ -1,0 +1,197 @@
+---
+title: Anomaly Detection Using ClickHouse 
+description: This article is part of a series where we look at doing data science work within ClickHouse
+date_published: 2023-10-17
+date_updated: 2023-10-17
+order: 12
+featured_image: 1.jpg
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/7ed91b9c-918e-4f43-9a45-3dfcb127306a/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+This article is part of a series where we look at doing data science work within [ClickHouse](https://clickhouse.com).  Articles in this series include [forecasting](/blog/forecasting-using-clickhouse), [anomaly detection](/blog/anomaly-detection-using-clickhouse), [linear regression](/blog/linear-regression-using-clickhouse) and [time series classification](/blog/time-series-analysis-using-clickhouse).
+
+Though this type of analysis would more typically take place outside of ClickHouse in a programming language such as Python or R, our preference is to take things as far as possible using just the database.  
+
+By taking this approach, we can rely on the power of ClickHouse to process large datasets with high performance, and reduce or even totally avoid the amount of code that we need to write.  This also means that we can work with smaller in-memory datasets on the client side and potentially avoid the need for distributed computation using frameworks such as Spark.  
+
+## About This Example 
+
+In this article, we will demonstrate a simple anomaly detection example which can be used to identify outliers in out dataset.  This has many potential uses, for instance with signal processing, predictive maintenence or fraud detection.
+
+## Dataset
+
+For this example, we are going to use some Cryptocurrency price data, specifically a time series of prices between Bitcoin and USD (BTC-USD) and Ethereum and USD (ETH-USD).  The data spans from July 2019 to June 2020.
+
+The dataset contains four columns: 
+
+- The name of the exchange rate ('ticker'), 
+- The date of the exchange rate ('ts'), 
+- The value of the exchange rate ('price'),
+- The daily percentage change in the exchange rate ('return').
+
+A preview of the data is shown below:
+
+```
+SELECT *
+FROM exchange_rates
+ORDER BY ts DESC
+LIMIT 10
+
+Query id: 4030a934-0dc8-4f8f-b529-bd0b01d033d8
+
+┌─ticker──┬─────────ts─┬───────────price─┬───────────────return─┐
+│ BTC-USD │ 2020-06-29 │ 9190.8544921875 │ 0.005170015512075743 │
+└─────────┴────────────┴─────────────────┴──────────────────────┘
+┌─ticker──┬─────────ts─┬─────────────price─┬───────────────return─┐
+│ ETH-USD │ 2020-06-29 │ 228.1948699951172 │ 0.012636955023823893 │
+└─────────┴────────────┴───────────────────┴──────────────────────┘
+┌─ticker──┬─────────ts─┬──────────────price─┬────────────────return─┐
+│ BTC-USD │ 2020-06-28 │      9143.58203125 │  0.010855408054862181 │
+│ ETH-USD │ 2020-06-28 │    225.34716796875 │   0.01070764753067932 │
+│ BTC-USD │ 2020-06-27 │        9045.390625 │ -0.012826410118569775 │
+│ ETH-USD │ 2020-06-27 │  222.9597930908203 │ -0.029208468909296514 │
+│ BTC-USD │ 2020-06-26 │      9162.91796875 │ -0.010998117562784016 │
+│ ETH-USD │ 2020-06-26 │  229.6680450439453 │ -0.014065340211250277 │
+│ BTC-USD │ 2020-06-25 │    9264.8134765625 │ -0.005239308190707503 │
+│ ETH-USD │ 2020-06-25 │ 232.94448852539062 │  -0.01199449842812228 │
+└─────────┴────────────┴────────────────────┴───────────────────────┘
+
+10 rows in set. Elapsed: 0.003 sec.
+```
+
+The return for the two time series can be visualised like so:
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/7ed91b9c-918e-4f43-9a45-3dfcb127306a/latest?embedded=true&embeddedStaticCellId=79055085-5167-4533-9937-f84d0f82be4b" ></iframe>
+</div>
+
+## Method
+
+We will implement a simple anomaly detection technique where the returns within the 20-day rolling mean plus/minus 3 times the 20-day rolling standard deviation are classified as normal, and the remaining returns are classified as anomalous.
+
+This will be implemented as a view:
+
+```
+create view
+    stats
+as select
+    ticker,
+    ts,
+    return,
+    avg(return) over (partition by ticker order by ts range between 20 preceding and current row) as rolling_mean,
+    stddevSamp(return) over (partition by ticker order by ts range between 20 preceding and current row) as rolling_std,
+    rolling_mean + 3 * rolling_std as upper_bound,
+    rolling_mean - 3 * rolling_std as lower_bound
+from 
+    exchange_rates
+```
+
+Which looks like this when rendered:
+
+```
+select * from stats order by ts desc limit 10
+
+SELECT *
+FROM stats
+ORDER BY ts DESC
+LIMIT 10
+
+Query id: 860d4084-9e84-46c6-9fa2-795b60cb02d3
+
+┌─ticker──┬─────────ts─┬────────────────return─┬───────────rolling_mean─┬──────────rolling_std─┬──────────upper_bound─┬───────────lower_bound─┐
+│ BTC-USD │ 2020-06-29 │  0.005170015512075743 │ -0.0027509795878882487 │ 0.018316565195642415 │ 0.052198715999039004 │ -0.057700675174815495 │
+│ ETH-USD │ 2020-06-29 │  0.012636955023823893 │ -0.0033322248178069493 │ 0.025001309959833153 │   0.0716717050616925 │  -0.07833615469730641 │
+│ BTC-USD │ 2020-06-28 │  0.010855408054862181 │ -0.0029355089926646613 │ 0.018252182198817194 │ 0.051821037603786924 │  -0.05769205558911625 │
+│ ETH-USD │ 2020-06-28 │   0.01070764753067932 │ -0.0037120458233829623 │  0.02480640322061126 │  0.07070716383845083 │  -0.07813125548521674 │
+│ BTC-USD │ 2020-06-27 │ -0.012826410118569775 │  -0.002933643336814123 │ 0.018253664268677163 │  0.05182734946921736 │  -0.05769463614284561 │
+│ ETH-USD │ 2020-06-27 │ -0.029208468909296514 │ -0.0035850093584286163 │ 0.024890628370961967 │  0.07108687575445728 │  -0.07825689447131452 │
+│ BTC-USD │ 2020-06-26 │ -0.010998117562784016 │  -0.002381260452695906 │ 0.018114311289675677 │  0.05196167341633112 │  -0.05672419432172293 │
+│ ETH-USD │ 2020-06-26 │ -0.014065340211250277 │  -0.002054101718144347 │ 0.024215358927186303 │  0.07059197506341455 │  -0.07470017849970326 │
+│ BTC-USD │ 2020-06-25 │ -0.005239308190707503 │  -0.002513977586946661 │ 0.018190649623184386 │   0.0520579712826065 │  -0.05708592645649982 │
+│ ETH-USD │ 2020-06-25 │  -0.01199449842812228 │ -0.0020086047964831743 │ 0.024192550116693537 │  0.07056904555359744 │  -0.07458625514656378 │
+└─────────┴────────────┴───────────────────────┴────────────────────────┴──────────────────────┴──────────────────────┴───────────────────────┘
+
+10 rows in set. Elapsed: 0.004 sec.
+```
+
+If we were to plot the upper and low bound for the two time series, we can see the limits which have been defined:
+
+BTC-USD:
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/7ed91b9c-918e-4f43-9a45-3dfcb127306a/latest?embedded=true&embeddedStaticCellId=50829d72-0b0c-4d53-879a-ce6f2da15b28" ></iframe>
+</div>
+
+ETH-USD:
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/7ed91b9c-918e-4f43-9a45-3dfcb127306a/latest?embedded=true&embeddedStaticCellId=d3bf5cfa-fefa-4765-bc19-b77b3f0c97b3" ></iframe>
+</div>
+
+## Results
+
+This simple approach identifies 5 anomalies for the BTC-USD exchange rate and 6 anomalies for the ETH-USD exchange rate.
+
+```
+SELECT
+    ticker,
+    count(*)
+FROM stats
+WHERE (return < lower_bound) OR (return > upper_bound)
+GROUP BY ticker
+
+Query id: 4b321d0c-3ef9-48de-9406-8b0963f90399
+
+┌─ticker──┬─count()─┐
+│ ETH-USD │       6 │
+│ BTC-USD │       5 │
+└─────────┴─────────┘
+
+2 rows in set. Elapsed: 0.005 sec.
+```
+
+The identified anomalies include the large downward jumps observed for both currencies in March 2020 around the time of the Covid pandemic.
+
+```
+SELECT
+    ticker,
+    ts,
+    return
+FROM stats
+WHERE (return < lower_bound) OR (return > upper_bound)
+ORDER BY return ASC
+LIMIT 2
+
+Query id: a0321971-2989-4eda-92b3-e5d3c015f718
+
+┌─ticker──┬─────────ts─┬───────────────return─┐
+│ ETH-USD │ 2020-03-12 │ -0.42347221465293294 │
+│ BTC-USD │ 2020-03-12 │ -0.37169538560117077 │
+└─────────┴────────────┴──────────────────────┘
+
+2 rows in set. Elapsed: 0.004 sec.
+```
+
+## Conclusion
+
+In this article we have demonstrated how we can use a simple anomaly detection function based on looking at previous values and standard deviations.
+
+Though there are of course more sophisiticated anomaly detection approaches which could be implemented in a programming language, again we like the principle of implementing analytics logic this in the database where it makes sense to do so.
+
+## Sample Notebook
+
+A notebook describing the full worked example can be found at [this URL](https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/7ed91b9c-918e-4f43-9a45-3dfcb127306a/draft/logic).
+
+</Article>

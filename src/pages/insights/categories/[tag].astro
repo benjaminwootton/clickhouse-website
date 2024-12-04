@@ -11,13 +11,13 @@ export async function getStaticPaths() {
 
     let tags: any = [];
     posts.forEach((post: any) => {
-        if (post.frontmatter.category) {
+        if (post.frontmatter.tag) {
             tags.push({
                 params: {
-                    tag: post.frontmatter.category.toLowerCase().replaceAll(' ', '-'),
+                    tag: post.frontmatter.tag.toLowerCase().replaceAll(' ', '-'),
                 },
                 props: {
-                    fullTagName: post.frontmatter.category,
+                    fullTagName: post.frontmatter.tag,
                 }
             });
         }

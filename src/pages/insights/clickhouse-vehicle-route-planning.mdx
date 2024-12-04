@@ -1,0 +1,603 @@
+---
+title: Optimising Vehicle Routing Using ClickHouse Cloud And Google OR-Tools
+description: Operational Analytics is about using real time data to make better day to day decisions
+date_published: 2024-02-5
+date_updated: 2024-02-5
+order: 12
+featured_image: carmap.jpg
+tag: General
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+import { Picture } from 'astro:assets';
+import travelling from 'assets/insights/travelling.png';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/99d05726-7a83-425d-89ca-57ed9643f15f/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+Operational Analytics is about using real time data to make better day to day decisions.  It involves looking at the state of the world right now, and using it to guide your next best action such that your business becomes more efficient and effective.   
+
+In these systems, we typically need to ingest high volumes of data and process it with low latency before putting it directly into the hands of employees.  The high end-to-end performance of [ClickHouse Cloud](https://clickhouse.com) makes it well suited for underlying operational systems like this.  
+
+These are the types of solutions we build at [Ensemble](/), so we wanted to do a walkthrough to bring this to life.  Our aim will be to solve a _travelling salesman_ type problem, where we need to optimise the route of a fleet of delivery vehicles in order to complete the deliveries in the most efficient way.  Our solution will ultimately produce a series of optimised route plans which look like this:  
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/99d05726-7a83-425d-89ca-57ed9643f15f/latest?embedded=true&embeddedStaticCellId=ea726266-5899-4cec-a28c-c3ba41e3dfb0" ></iframe>
+</div>
+
+
+## About The Travelling Salesman Problem
+
+In the travelling salesman problem, we are given a list of cities and the distances between each pair of cities.  The task is to calculate the shortest possible route that visits each city exactly once and returns to the origin city.  
+
+<Picture src={travelling} alt="" />
+
+The travelling salesman problem has been discussed since the 1930s, but can be updated for 2024 in the form of the _vehicle routing_ problem.  Here, we have a fleet of vehicles which needs to visit a number of cities.  The task is to do so with the fewest vehicles, in the fastest time and covering the fewest miles.
+
+This is of course a challenge that many real-world businesses face today.  They have a number of visits or deliveries that their staff need to make each day, and if they can do so in an optimal way then they can directly reduce costs such as staffing, fuel, and vehicle maintenence.  As a bonus, they could also improve their customer experience with faster and more on-time deliveries.   
+
+All in all, this is a great real-world application of operational analytics and a high value business problem to solve!
+
+## Solving The Vehicle Routing Problem With ClickHouse
+
+We will now walk through the process of solving this, making use of ClickHouse Cloud as the data management engine.
+
+Our fictional business have a number of warehouses around the UK, and a fixed number of vehicles which they can make deliveries using.  They will also have a schedule of deliveries that they need to make based on their customer orders, which will of course change continually depending on the order profile.  
+
+Our task is to minimise the number of vehicles and the distance travelled by each vehicle to make the delivery operation as efficient as possible.  
+
+To make things more interesting, we will also model a few constraints such as the fact that some deliveries require refrigerated vehicles, and that the total load of each vehicle must never exceed its capacity.  This makes the example much more realistic but also more complex.  
+
+## About Our Dataset
+
+Our dataset has been synthetically generated and inserted into ClickHouse Cloud.
+
+The dataset contains 4 warehouses which also have an associated latitude and longtitude: 
+
+```
+SELECT *
+FROM logisticsdemo.warehouses
+
+Query id: 6494eb67-d038-4366-ac01-a628c6476465
+
+┌─Warehouse──┬──Latitude─┬─Longitude─┐
+│ Cardiff    │ 51.481583 │  -3.17909 │
+│ Edinburgh  │  55.95325 │ -3.188267 │
+│ London     │ 51.509865 │ -0.118092 │
+│ Manchester │  53.48396 │ -2.244644 │
+└────────────┴───────────┴───────────┘
+
+4 rows in set. Elapsed: 0.002 sec.
+```
+
+The dataset has 19 vehicles, consisting of vans and trucks.  Each vehicle has a payload capacity, with the trucks typically being able to carry more than the vans.  A subset of the vehicles are also marked as being able to carry refigerated loads:
+
+```
+SELECT *
+FROM logisticsdemo.vehicles
+
+Query id: 8c3d7a2b-d817-40f5-8c2e-5038b4913858
+
+┌─ID─┬─Type──┬─Payload─┬─Refrigerated─┐
+│  0 │ Van   │    1000 │ true         │
+│  1 │ Van   │    2000 │ true         │
+│  2 │ Van   │    3000 │ true         │
+│  3 │ Van   │    4000 │ true         │
+│  4 │ Van   │    5000 │ true         │
+│  5 │ Truck │    6000 │ true         │
+│  6 │ Truck │    7000 │ true         │
+│  7 │ Truck │    8000 │ true         │
+│  8 │ Truck │    9000 │ true         │
+│  9 │ Truck │   10000 │ true         │
+│ 10 │ Van   │    1000 │ false        │
+│ 11 │ Van   │    2000 │ false        │
+│ 12 │ Van   │    3000 │ false        │
+│ 13 │ Van   │    4000 │ false        │
+│ 14 │ Van   │    5000 │ false        │
+│ 15 │ Truck │    6000 │ false        │
+│ 16 │ Truck │    7000 │ false        │
+│ 17 │ Truck │    8000 │ false        │
+│ 18 │ Truck │    9000 │ false        │
+│ 19 │ Truck │   10000 │ false        │
+└────┴───────┴─────────┴──────────────┘
+
+20 rows in set. Elapsed: 0.004 sec.
+```
+
+Next, we have a catalogue of inventory that the business stocks.  This consists of food items which are organised into categories, a subset of which are marked as requiring refrigeration:
+
+```
+SELECT *
+FROM logisticsdemo.inventory
+LIMIT 10
+
+Query id: a3a1f423-cfae-45d1-b540-24f90319647c
+
+┌─Category─────────┬─Description───┬─Refrigerated─┐
+│ Bread and Bakery │ Aish merahrah │ false        │
+│ Bread and Bakery │ Anadama bread │ false        │
+│ Bread and Bakery │ Anpan         │ false        │
+│ Bread and Bakery │ Appam         │ false        │
+│ Bread and Bakery │ "Hoppers"     │ false        │
+│ Bread and Bakery │ Arboud        │ false        │
+│ Bread and Bakery │ Arepa         │ false        │
+│ Bread and Bakery │ Baba          │ false        │
+│ Bread and Bakery │ Babka         │ false        │
+│ Bread and Bakery │ Bagel         │ false        │
+└──────────────────┴───────────────┴──────────────┘
+
+10 rows in set. Elapsed: 0.004 sec.
+```
+
+Next, we have a delivery schedule which has been derived from the customer orders.  Each delivery consists of a city where the delivery needs to take place, the product and the quantity of the delivery.  The lattitude and logntitude of the city is also stored alongside the delivery record for convenience:  
+
+```
+SELECT *
+FROM logisticsdemo.deliveries
+ORDER BY Description ASC
+LIMIT 20
+
+Query id: aea3969a-c7f8-423a-853b-83c5a61f7d35
+
+┌─City─────────────┬──Latitude─┬─Longitude─┬─Category─┬─Description─────────────┬─Quantity─┬─Refrigerated─┐
+│ Gravesend        │ 51.441883 │  0.370759 │ Cheese   │ Abbaye de Belloc        │       16 │ true         │
+│ Gloucester       │ 51.864445 │ -2.244444 │ Cheese   │ Abbaye de Belloc        │       22 │ true         │
+│ Elgin            │ 57.653484 │ -3.335724 │ Cheese   │ Abbaye de Citeaux       │       16 │ true         │
+│ Swindon          │ 51.568535 │ -1.772232 │ Cheese   │ Abbaye de Citeaux       │       10 │ true         │
+│ Gravesend        │ 51.441883 │  0.370759 │ Cheese   │ Abbaye de Citeaux       │        5 │ true         │
+│ Ely              │ 52.398056 │  0.262222 │ Cheese   │ Abbaye du Mont des Cats │       21 │ true         │
+│ Folkestone       │ 51.081398 │  1.169456 │ Cheese   │ Abbaye du Mont des Cats │       23 │ true         │
+│ Gloucester       │ 51.864445 │ -2.244444 │ Cheese   │ Abbaye du Mont des Cats │       16 │ true         │
+│ Solihull         │  52.41281 │ -1.778197 │ Cheese   │ Abbaye du Mont des Cats │       17 │ true         │
+│ Oxford           │  51.75202 │ -1.257677 │ Cheese   │ Abbaye du Mont des Cats │        7 │ true         │
+│ St.Albans        │    51.755 │    -0.336 │ Cheese   │ Abbaye du Mont des Cats │       16 │ true         │
+│ Sutton Coldfield │ 52.570385 │ -1.824042 │ Cheese   │ Abbaye du Mont des Cats │       14 │ true         │
+│ Chesterfield     │ 53.235046 │ -1.421629 │ Cheese   │ Abbaye du Mont des Cats │        8 │ true         │
+│ Portsmouth       │ 50.805832 │ -1.087222 │ Cheese   │ Abertam                 │       22 │ true         │
+│ Elgin            │ 57.653484 │ -3.335724 │ Cheese   │ Abertam                 │       13 │ true         │
+│ Exeter           │ 50.716667 │ -3.533333 │ Cheese   │ Abondance               │       13 │ true         │
+│ Bradford         │      53.8 │     -1.75 │ Cheese   │ Abondance               │       12 │ true         │
+│ Truro            │     50.26 │    -5.051 │ Cheese   │ Abondance               │       15 │ true         │
+│ Sheffield        │  53.38333 │ -1.466667 │ Cheese   │ Abondance               │       24 │ true         │
+│ Gravesend        │ 51.441883 │  0.370759 │ Cheese   │ Acapella                │       23 │ true         │
+└──────────────────┴───────────┴───────────┴──────────┴─────────────────────────┴──────────┴──────────────┘
+
+20 rows in set. Elapsed: 0.003 sec. Processed 2.50 thousand rows, 168.67 KB (815.82 thousand rows/s., 55.04 MB/s.)
+Peak memory usage: 327.39 KiB.
+```
+
+The delivery schedule can be visualised like so, showing the breakdown of product categories being delivered into each city.  We can see that Ayr is the city with the most deliveries, with Cheese being the most popular product category in most cities:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/99d05726-7a83-425d-89ca-57ed9643f15f/latest?embedded=true&embeddedStaticCellId=3f8eb628-8804-4697-8c04-7c812e4a9006" ></iframe>
+</div>
+
+  
+
+## Optimising The Vehicle Allocation And Routes
+
+As deliveries will be made from warehouses, we first need to calculate the distance from each city to the nearest warehouse which we will use as a baseline.  We can calculate this distance using the ClickHouse _geoDistance_ function:  
+
+```
+SELECT
+    a.City AS City,
+    c.Latitude AS City_Latitude,
+    c.Longitude AS City_Longitude,
+    b.Warehouse AS Warehouse,
+    d.Latitude AS Warehouse_Latitude,
+    d.Longitude AS Warehouse_Longitude,
+    a.Distance AS Distance
+FROM
+(
+    SELECT DISTINCT
+        a.City,
+        min(geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000) AS Distance
+    FROM logisticsdemo.deliveries AS a, logisticsdemo.warehouses AS b
+    GROUP BY a.City
+) AS a
+LEFT JOIN
+(
+    SELECT DISTINCT
+        b.Warehouse,
+        geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000 AS Distance
+    FROM logisticsdemo.deliveries AS a, logisticsdemo.warehouses AS b
+) AS b ON a.Distance = b.Distance
+LEFT JOIN
+(
+    SELECT DISTINCT
+        City,
+        Latitude,
+        Longitude
+    FROM logisticsdemo.deliveries
+) AS c ON a.City = c.City
+LEFT JOIN
+(
+    SELECT DISTINCT
+        Warehouse,
+        Latitude,
+        Longitude
+    FROM logisticsdemo.warehouses
+) AS d ON b.Warehouse = d.Warehouse
+ORDER BY a.City ASC
+LIMIT 20
+
+Query id: 89ca3a69-73dd-416b-ba10-afc68117ce55
+
+┌─City────────────┬─City_Latitude─┬─City_Longitude─┬─Warehouse──┬─Warehouse_Latitude─┬─Warehouse_Longitude─┬───────Distance─┐
+│ Aberdeen        │      57.14965 │      -2.099075 │ Edinburgh  │           55.95325 │           -3.188267 │  149.117359375 │
+│ Ayr             │     55.458565 │      -4.629179 │ Edinburgh  │           55.95325 │           -3.188267 │     106.016875 │
+│ Basildon        │     51.572376 │       0.470009 │ London     │          51.509865 │           -0.118092 │ 41.39117578125 │
+│ Bath            │         51.38 │          -2.36 │ Cardiff    │          51.481583 │            -3.17909 │ 58.07637109375 │
+│ Bedford         │     52.136436 │      -0.460739 │ London     │          51.509865 │           -0.118092 │   73.609703125 │
+│ Birmingham      │      52.48947 │      -1.898575 │ Manchester │           53.48396 │           -2.244644 │    113.0875625 │
+│ Bradford        │          53.8 │          -1.75 │ Manchester │           53.48396 │           -2.244644 │  48.0373515625 │
+│ Brighton & Hove │     50.827778 │      -0.152778 │ London     │          51.509865 │           -0.118092 │  75.9222734375 │
+│ Bristol         │     51.454514 │       -2.58791 │ Cardiff    │          51.481583 │            -3.17909 │  41.1921953125 │
+│ Cambridge       │     52.205276 │       0.119167 │ London     │          51.509865 │           -0.118092 │  79.0830390625 │
+│ Canterbury      │         51.28 │           1.08 │ London     │          51.509865 │           -0.118092 │  87.2235703125 │
+│ Carlisle        │        54.891 │         -2.944 │ Edinburgh  │           55.95325 │           -3.188267 │  119.270515625 │
+│ Chelmsford      │       51.7361 │         0.4798 │ London     │          51.509865 │           -0.118092 │ 48.45783203125 │
+│ Chester         │         53.19 │          -2.89 │ Manchester │           53.48396 │           -2.244644 │     54.0235625 │
+│ Chesterfield    │     53.235046 │      -1.421629 │ Manchester │           53.48396 │           -2.244644 │ 61.40132421875 │
+│ Chichester      │       50.8365 │        -0.7792 │ London     │          51.509865 │           -0.118092 │   88.033296875 │
+│ Chippenham      │     51.458057 │      -2.116074 │ Cardiff    │          51.481583 │            -3.17909 │         73.914 │
+│ Coventry        │     52.408054 │      -1.510556 │ Manchester │           53.48396 │           -2.244644 │ 129.5038671875 │
+│ Derby           │     52.916668 │      -1.466667 │ Manchester │           53.48396 │           -2.244644 │      81.786375 │
+│ Dundee          │        56.462 │        -2.9707 │ Edinburgh  │           55.95325 │           -3.188267 │   58.234859375 │
+└─────────────────┴───────────────┴────────────────┴────────────┴────────────────────┴─────────────────────┴────────────────┘
+
+20 rows in set. Elapsed: 0.024 sec. Processed 7.51 thousand rows, 146.87 KB (314.75 thousand rows/s., 6.15 MB/s.)
+Peak memory usage: 12.78 MiB.
+```
+
+The allocations between cities and their closest warehouses can be plotted visually:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/99d05726-7a83-425d-89ca-57ed9643f15f/latest?embedded=true&embeddedStaticCellId=1028e24c-4d9c-4f0e-b7f2-96e4c36f0ce2" ></iframe>
+</div>
+
+
+Next, we will calculate the distance between each pair of cities in a similar way.  This will form an input to our optimsiation process:
+
+```
+SELECT DISTINCT *
+FROM
+(
+    SELECT *
+    FROM
+    (
+        SELECT DISTINCT
+            a.City AS City_1,
+            b.City AS City_2,
+            round(geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000, 0) AS Distance
+        FROM logisticsdemo.deliveries AS a, logisticsdemo.deliveries AS b
+    )
+    UNION ALL
+        SELECT DISTINCT
+        a.Warehouse AS City_1,
+        b.Warehouse AS City_2,
+        round(geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000, 0) AS Distance
+    FROM logisticsdemo.warehouses AS a, logisticsdemo.warehouses AS b
+    UNION ALL
+        SELECT DISTINCT
+        a.City AS City_1,
+        b.Warehouse AS City_2,
+        round(geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000, 0) AS Distance
+    FROM logisticsdemo.deliveries AS a, logisticsdemo.warehouses AS b
+    UNION ALL
+        SELECT DISTINCT
+        a.Warehouse AS City_1,
+        b.City AS City_2,
+        round(geoDistance(a.Longitude, a.Latitude, b.Longitude, b.Latitude) / 1000, 0) AS Distance
+    FROM logisticsdemo.warehouses AS a, logisticsdemo.deliveries AS b
+)
+ORDER BY
+    City_1 ASC,
+    City_2 ASC
+LIMIT 20
+
+Query id: ea69655c-de12-43b5-ba62-0bd1c03747e5
+
+┌─City_1───┬─City_2──────────┬─Distance─┐
+│ Aberdeen │ Aberdeen        │        0 │
+│ Aberdeen │ Ayr             │      245 │
+│ Aberdeen │ Basildon        │      643 │
+│ Aberdeen │ Bath            │      642 │
+│ Aberdeen │ Bedford         │      568 │
+│ Aberdeen │ Birmingham      │      519 │
+│ Aberdeen │ Bradford        │      374 │
+│ Aberdeen │ Brighton & Hove │      715 │
+│ Aberdeen │ Bristol         │      635 │
+│ Aberdeen │ Cambridge       │      569 │
+│ Aberdeen │ Canterbury      │      685 │
+│ Aberdeen │ Cardiff         │      635 │
+│ Aberdeen │ Carlisle        │      257 │
+│ Aberdeen │ Chelmsford      │      625 │
+│ Aberdeen │ Chester         │      444 │
+│ Aberdeen │ Chesterfield    │      438 │
+│ Aberdeen │ Chichester      │      708 │
+│ Aberdeen │ Chippenham      │      634 │
+│ Aberdeen │ Coventry        │      529 │
+│ Aberdeen │ Derby           │      473 │
+└──────────┴─────────────────┴──────────┘
+
+20 rows in set. Elapsed: 0.759 sec. Processed 10.02 thousand rows, 253.67 KB (13.20 thousand rows/s., 334.20 KB/s.)
+Peak memory usage: 21.19 MiB.
+```
+
+## Solving The Optimisation Problem
+
+Though it is possible to solve this problem using vanilla Python, we chose to use the OR-Tools library, which is an open source library offered by Google.  
+
+As this is a constraint optimisation process which involves trying a number of different options, OR-Tools will likely perform better in narrowing down the search set in order to find an optimal (or close to optimal) solution.
+
+We won't break down the following Python code in too much detail, but effectively we are preparing the input datasets to be passed into OR-Tools, then running the optimisation, then processing the results ready for serialisation back into ClickHouse Cloud:
+
+```
+from ortools.constraint_solver import pywrapcp
+from ortools.constraint_solver import routing_enums_pb2
+
+# create a data frame for storing the optimal load of each vehicle for each warehouse
+vehicle_loads = pd.DataFrame(columns=['Warehouse', 'Vehicle_ID', 'Vehicle_Capacity', 'Vehicle_Stops'] + dataframe.columns.tolist())
+
+# create a data frame for storing the optimal route of each vehicle for each warehouse
+route_plans = pd.DataFrame(columns=['Warehouse', 'Vehicle_ID', 'City'])
+
+# loop across the warehouses
+for warehouse in dataframe_7['Warehouse'].unique():
+
+    # loop across the load types (refrigerated / unrefrigerated)
+    for refrigerated in [True, False]:
+
+        # calculate the weight of the items to be delivered to each city
+        weight_by_city = pd.concat([pd.Series(data=0, index=[warehouse]), dataframe.loc[dataframe['City'].isin(dataframe_6.loc[dataframe_6['Warehouse'] == warehouse, 'City']) & (dataframe['Refrigerated'] == refrigerated), ['City', 'Quantity']].groupby(by='City')['Quantity'].sum()])
+
+        # extract the maximum weight that can be loaded on each vehicle
+        weight_by_vehicle = dataframe_10.loc[dataframe_10['Refrigerated'] == refrigerated, ['ID', 'Payload']].set_index('ID')['Payload']
+
+        # organize the inputs in the format required by the optimizer
+        data = {}
+        data['weight_by_city'] = weight_by_city.values.tolist()
+        data['weight_by_vehicle'] = weight_by_vehicle.values.tolist()
+        data['distance_matrix'] = distances.loc[weight_by_city.index, weight_by_city.index].values.tolist()
+        data['num_cities'] = len(data['distance_matrix'])
+        data['num_vehicles'] = len(data['weight_by_vehicle'])
+        data['warehouse'] = 0
+
+        # create the routing index manager
+        manager = pywrapcp.RoutingIndexManager(data['num_cities'], data['num_vehicles'], data['warehouse'])
+
+        # create the routing model
+        routing = pywrapcp.RoutingModel(manager)
+
+        # create and register the distance callback
+        def distance_callback(from_index, to_index):
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return data['distance_matrix'][from_node][to_node]
+
+        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+
+        # create and register the capacity callback
+        def capacity_callback(index):
+            node_index = manager.IndexToNode(index)
+            return data['weight_by_city'][node_index]
+
+        capacity_callback_index = routing.RegisterUnaryTransitCallback(capacity_callback)
+        routing.AddDimensionWithVehicleCapacity(capacity_callback_index, 0, data['weight_by_vehicle'], True, 'Capacity')
+        
+        for vehicle_id in range(data['num_vehicles']):
+            routing.SetFixedCostOfVehicle(int(weight_by_vehicle.values[vehicle_id]), vehicle_id);
+        
+        # run the optimization
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+        search_parameters.local_search_metaheuristic = (routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
+        search_parameters.time_limit.FromSeconds(1)
+        solution = routing.SolveWithParameters(search_parameters)
+
+        # extract the optimal vehicle loads and route plans
+        vehicle_load = dataframe.loc[dataframe['City'].isin(weight_by_city.index) & (dataframe['Refrigerated'] == refrigerated), :].copy()
+        vehicle_load.insert(0, 'Warehouse', warehouse)
+        vehicle_load.insert(1, 'Vehicle_ID', None)
+        vehicle_load.insert(2, 'Vehicle_Capacity', None)
+        vehicle_load.insert(3, 'Vehicle_Stops', None)
+        route_plan = pd.DataFrame()
+
+        for vehicle_id in range(data['num_vehicles']):
+            index = routing.Start(vehicle_id)
+            route = []
+            while not routing.IsEnd(index):
+                node_index = manager.IndexToNode(index)
+                previous_index = index
+                index = solution.Value(routing.NextVar(index))
+                route.append(weight_by_city.index[node_index])
+            route.append(weight_by_city.index[manager.IndexToNode(index)])
+            if len(route) > 2:
+                vehicle_load.loc[vehicle_load['City'].isin(route), 'Vehicle_ID'] = weight_by_vehicle.index[vehicle_id]
+                vehicle_load.loc[vehicle_load['City'].isin(route), 'Vehicle_Capacity'] = weight_by_vehicle.values[vehicle_id]
+                vehicle_load.loc[vehicle_load['City'].isin(route), 'Vehicle_Stops'] = len(route) - 2
+                route_plan = pd.concat([route_plan, pd.DataFrame({'Warehouse': warehouse, 'Vehicle_ID': weight_by_vehicle.index[vehicle_id], 'City': route})])
+
+        # save the results
+        vehicle_loads = pd.concat([vehicle_loads, vehicle_load], axis=0, ignore_index=True)
+        route_plans = pd.concat([route_plans, route_plan], axis=0, ignore_index=True)
+```
+
+OR-Tools has left us with two dataframes.  One describes the vehicle loads in terms of which orders should go on which vehicles, and one describes the route plans which is the optimum order in which the vehicles should visit the cities.  We will serialise these dataframes to ClickHouse for subsequent analysis:
+
+```
+# save the vehicle loads in Clickhouse
+client.command('''
+    drop table if exists logisticsdemo.vehicle_loads sync
+''')
+
+client.command('''
+    create or replace table logisticsdemo.vehicle_loads (
+        Warehouse String,
+        Vehicle_ID Int32,
+        Vehicle_Capacity Float32,
+        Vehicle_Stops Int32,
+        City String,
+        Latitude Float32,
+        Longitude Float32,
+        Category String,
+        Description String,
+        Quantity Float32,
+        Refrigerated Bool
+    ) engine MergeTree order by Warehouse 
+''')
+
+client.insert_df('logisticsdemo.vehicle_loads', vehicle_loads)
+```
+
+```
+# save the route plans in Clickhouse
+client.command('''
+    drop table if exists logisticsdemo.route_plans sync
+''')
+
+client.command('''
+    create or replace table logisticsdemo.route_plans (
+        Warehouse String,
+        Vehicle_ID Int32,
+        Stop_Number Int32,
+        Stop_City String
+    ) engine MergeTree order by Warehouse 
+''')
+
+client.insert_df('logisticsdemo.route_plans', route_plans)
+```
+
+## Analysing The Results
+
+Firstly, lets analyse the _vehicle_loads_ table.  This shows us which vehicles should visit which warehouse, and which cities it should visit.  Here we can see that vehicle with ID 5 should visit the Cardiff warehouse, then a further 14 cities to complete the days deliveries.
+
+```
+SELECT DISTINCT
+    Vehicle_ID,
+    Warehouse,
+    City
+FROM logisticsdemo.vehicle_loads
+WHERE Vehicle_ID = 5
+
+Query id: 3c938c0e-e8ba-475c-b070-99a4e8d5458c
+
+┌─Vehicle_ID─┬─Warehouse─┬─City───────┐
+│          5 │ Cardiff   │ Bath       │
+│          5 │ Cardiff   │ Bristol    │
+│          5 │ Cardiff   │ Chippenham │
+│          5 │ Cardiff   │ Exeter     │
+│          5 │ Cardiff   │ Gloucester │
+│          5 │ Cardiff   │ Hereford   │
+│          5 │ Cardiff   │ Plymouth   │
+│          5 │ Cardiff   │ Salisbury  │
+│          5 │ Cardiff   │ St. Davids │
+│          5 │ Cardiff   │ Swansea    │
+│          5 │ Cardiff   │ Swindon    │
+│          5 │ Cardiff   │ Truro      │
+│          5 │ Cardiff   │ Wells      │
+│          5 │ Cardiff   │ Worcester  │
+└────────────┴───────────┴────────────┘
+
+14 rows in set. Elapsed: 0.003 sec. Processed 2.50 thousand rows, 95.98 KB (862.29 thousand rows/s., 33.11 MB/s.)
+Peak memory usage: 138.84 KiB.
+```
+
+We have also identified which orders should be loaded onto each vehicle, taking account of constraints such as the maximum payload of the vehicle and whether or not it is refridgerated.
+
+```
+SELECT *
+FROM logisticsdemo.vehicle_loads
+WHERE Vehicle_ID = 5
+LIMIT 20
+
+Query id: 676af815-63f2-4fba-9e9e-d366c0d6a5b9
+
+┌─Warehouse─┬─Vehicle_ID─┬─Vehicle_Capacity─┬─Vehicle_Stops─┬─City─┬─Latitude─┬─Longitude─┬─Category───┬─Description─────────────┬─Quantity─┬─Refrigerated─┐
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Vulscombe               │       14 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Bra                     │       15 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Frinault                │        8 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Fourme de Haute Loire   │       24 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Manouri                 │       18 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Gaperon a l'Ail         │        8 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Smoked Gouda            │        6 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Scamorza                │       11 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Fruit      │ Rambutan                │       11 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Fruit      │ Mango                   │       22 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Cottage Cheese          │       24 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Vendomois               │       14 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Wellington              │       21 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Requeson                │       15 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Marbled Cheeses         │        8 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Folded Cheese with Mint │       19 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Quartirolo Lombardo     │        7 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Sainte Maure            │        7 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Vegetables │ Artichoke               │       10 │ true         │
+│ Cardiff   │          5 │             6000 │            14 │ Bath │    51.38 │     -2.36 │ Cheese     │ Brebis du Lavort        │       15 │ true         │
+└───────────┴────────────┴──────────────────┴───────────────┴──────┴──────────┴───────────┴────────────┴─────────────────────────┴──────────┴──────────────┘
+
+20 rows in set. Elapsed: 0.004 sec. Processed 2.50 thousand rows, 241.33 KB (556.34 thousand rows/s., 53.71 MB/s.)
+Peak memory usage: 731.51 KiB.
+```
+
+The _route_plans_ table adds a Stop_Number field to hard code the order in which the cities should be visited in order to minimise the distance travelled: 
+
+```
+SELECT *
+FROM logisticsdemo.route_plans
+WHERE Vehicle_ID = 5
+LIMIT 20
+
+Query id: 54c9bc30-f2f3-42df-87d6-7de56c632728
+
+┌─Warehouse─┬─Vehicle_ID─┬─Stop_Number─┬─Stop_City──┐
+│ Cardiff   │          5 │           0 │ Cardiff    │
+│ Cardiff   │          5 │           1 │ Worcester  │
+│ Cardiff   │          5 │           2 │ Wells      │
+│ Cardiff   │          5 │           3 │ Truro      │
+│ Cardiff   │          5 │           4 │ Swindon    │
+│ Cardiff   │          5 │           5 │ Swansea    │
+│ Cardiff   │          5 │           6 │ St. Davids │
+│ Cardiff   │          5 │           7 │ Salisbury  │
+│ Cardiff   │          5 │           8 │ Plymouth   │
+│ Cardiff   │          5 │           9 │ Hereford   │
+│ Cardiff   │          5 │          10 │ Gloucester │
+│ Cardiff   │          5 │          11 │ Exeter     │
+│ Cardiff   │          5 │          12 │ Chippenham │
+│ Cardiff   │          5 │          13 │ Bristol    │
+│ Cardiff   │          5 │          14 │ Bath       │
+│ Cardiff   │          5 │          15 │ Cardiff    │
+└───────────┴────────────┴─────────────┴────────────┘
+
+16 rows in set. Elapsed: 0.003 sec.
+```
+
+The route plans can be visualised like so:
+
+
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/99d05726-7a83-425d-89ca-57ed9643f15f/latest?embedded=true&embeddedStaticCellId=ea726266-5899-4cec-a28c-c3ba41e3dfb0" ></iframe>
+</div>
+
+
+## Operational Analytics In Action T
+
+In this article, we demonstrated how to most efficiently allocate our fixed resources in a way that would reduce costs and improve the customer experience.  
+
+Solutions like this could be deployed right across your business, continually informing your employees of their next best action in very impactful ways.
+
+  <InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/99d05726-7a83-425d-89ca-57ed9643f15f/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+</Article>

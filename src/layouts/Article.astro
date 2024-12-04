@@ -13,17 +13,25 @@ interface Props {
         title: string;
         description: string;
         noindex?: boolean;
-        date: string,
-        author?: string,
-        authorImage?: string,
-        authorLinkedIn?: string,
-        author2?: string,
+        date_published: string,
+        authorName1?: string,
+        authorImage1?: string,
+        authorLinkedIn1?: string,
+        authorName2?: string,
         authorImage2?: string,
         authorLinkedIn2?: string,
     }
 }
 
 const { data } = Astro.props;
+
+const dateString = data.date_published;
+const dateObject = new Date(dateString);
+const formattedDate = dateObject.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+});
 
 const linkedInIcon = `
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -49,25 +57,46 @@ const linkedInIcon = `
             <article>
                 <HeroSmall>
                     <h1>{data.title}</h1>
-                    {data.author &&
+                    {data.authorName1 &&
                         <div class="my-8 flex justify-center items-center gap-3 md:gap-6 md:flex-row flex-col">
                             <div class="relative bg-[#1e1a20] max-w-max flex items-center gap-3 rounded-full py-2 px-4">
-                                {data.authorImage &&
+                                {(
+                                    data.authorImage1 === '/images/authors/benjamin-wootton.jpg' 
+                                    ||
+                                    data.authorImage1 === '/assets/authors/benjamin-wootton.jpg'
+                                ) ?
+                                    <picture>
+                                        <source srcset="/images/authors/benjamin-wootton.webp" type="image/webp" />
+                                        <img 
+                                            src={data.authorImage1}
+                                            alt={data.authorName1}
+                                            width="40"
+                                            height="40"
+                                            class="rounded-full object-cover w-[40px] h-[40px]"
+                                            loading="eager"
+                                        />
+                                    </picture>
+                                    :
+                                    data.authorName1 ? 
                                     <img 
-                                        src={data.authorImage}
-                                        alt={data.author}
+                                        src="/images/authors/benjamin-wootton.jpg"
+                                        alt={data.authorName1}
                                         width="40"
                                         height="40"
                                         class="rounded-full object-cover w-[40px] h-[40px]"
                                         loading="eager"
                                     />
+                                    :
+                                    ''
                                 }
-                                <p class="m-0">{data.author}</p>
-                                {data.authorLinkedIn &&
+                                <p class="m-0">{data.authorName1}</p>
+                                {data.authorLinkedIn1 &&
                                     <a
-                                        href={data.authorLinkedIn}
+                                        href={data.authorLinkedIn1}
                                         set:html={linkedInIcon}
                                         aria-label="LinkedIn"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         class="
                                             min-ww-[12px] max-w-[12px] h-[12px] block
                                             after:absolute after:top-0 after:left-0 after:w-full after:h-full
@@ -76,24 +105,26 @@ const linkedInIcon = `
                                 }
                             </div>
 
-                            {data.author2 &&
+                            {data.authorName2 &&
                                 <div class="relative bg-[#1e1a20] max-w-max flex items-center gap-3 rounded-full py-2 px-4">
                                     {data.authorImage2 &&
                                         <img 
                                             src={data.authorImage2}
-                                            alt={data.author2}
+                                            alt={data.authorName2}
                                             width="40"
                                             height="40"
                                             class="rounded-full object-cover w-[40px] h-[40px]"
                                             loading="eager"
                                         />
                                     }
-                                    <p class="m-0">{data.author2}</p>
+                                    <p class="m-0">{data.authorName2}</p>
                                     {data.authorLinkedIn2 &&
                                         <a
                                             href={data.authorLinkedIn2}
                                             set:html={linkedInIcon}
                                             aria-label="LinkedIn"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             class="
                                                 min-ww-[12px] max-w-[12px] h-[12px] block
                                                 after:absolute after:top-0 after:left-0 after:w-full after:h-full
@@ -104,7 +135,7 @@ const linkedInIcon = `
                             }
                         </div>
                     }
-                    <p>Published on {data.date}</p>
+                    <p>Published on {formattedDate}</p>
                 </HeroSmall>
                 <div class="
                     wrapper [&_img]:rounded-xl mt-[4rem] mb-[5rem]

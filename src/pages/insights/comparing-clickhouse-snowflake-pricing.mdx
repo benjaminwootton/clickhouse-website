@@ -1,0 +1,311 @@
+---
+title: Comparing ClickHouse Cloud With Snowflake Pricing 
+description: In this article we analyse the differences in pricing between Snowflake and ClickHouse Cloud
+date_published: 2023-10-23
+date_updated: 2023-10-23
+order: 12
+featured_image: 9.jpg
+tag: General
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://docs.google.com/spreadsheets/d/1u9ypUw7hpxL61ZY5_qLOkuU_MxWl-n9VxSJZ3-5F9-Q/edit?usp=sharing" title="Click here for our pricing calculator and the analysis behind this article"></InformationEmbed>
+
+## Introduction 
+
+In this article we analyse the differences in pricing between <a href="https://snowflake.com">Snowflake</a> and <a href="https://ClickHouse.com">ClickHouse Cloud</a>, with the aim of comparing TCO across the two platforms.
+
+We also provide a link to our [pricing calculator](https://docs.google.com/spreadsheets/d/1u9ypUw7hpxL61ZY5_qLOkuU_MxWl-n9VxSJZ3-5F9-Q/edit?usp=sharing) which can be used to compare prices based on your own environment sizing.  
+
+The tl;dr of our findings is that we found ClickHouse Cloud to potentially offer cost savings of 50%+ over Snowflake.  This analysis comes with caveats which are outlined below.  
+
+## Why Do This?
+
+With the release of ClickHouse Cloud, ClickHouse gained a similar value proposition to Snowflake:
+
+- A fully managed cloud data warehouse with a SQL based interface;
+- Seperation of compute and storage, giving us the ability to scale up or scale down to zero;
+- Consumption based billing based on exact use of storage and compute.
+
+Though Snowflake and ClickHouse Cloud have their individual strengths, there is also a degree of overlap in the workloads they can serve.  For instance, there are many situations where ClickHouse can be used as a traditional data warehouse, and there are situations where it might be appropriate to run ClickHouse style workloads such as time series or log analytics within Snowflake.
+
+With this overlap in capabilities, and with Snowflake widely considered to be "expensive", we wanted to dive deeper into how the two platforms compared in terms of cost.  
+
+## Caveats 
+
+All prices discussed in this article were correct as of 23rd October 2023.  They are based on hosting in AWS us-east-1, though the small price differences in cloud providers and regions are  immaterial to our conclusions.
+
+Both Snowflake and ClickHouse Cloud offer the ability to negotiate custom deals and dedicated environments.  However, in this analysis we are focusing on the standard self-service and on-demand pricing which is published on their respective websites.
+
+Our analysis is based on published credit costs and the storage and the compute resources that you are acquiring with them.  In the real-world, the products would perform differently which could have a significant impact on your total cost of ownership.  The ultimate cost differences you observe would also be a function of your deployment architecture, your datasets, use cases, usage profiles, organisational requirements, skillsets and more.   
+
+Finally, Snowflake do not share details about the exact specifications of the hardware that you are procuring to run your virtual warehouses, instead leading with t-shirt sizes such as "small" and "extra-large".  This makes accurate comparisons difficult, but as a potential customer is faced with the same challenge we felt that this was still a reasonable analysis to carry out.
+
+In spite of the above caveats, we believe this to be a useful analysis for anyone looking at the TCO of the two platforms or considering a migration away from Snowflake to Clickhouse.  
+
+## Consumption Based Billing 
+
+Both Snowflake and Clickhouse are based on a consumption based billing model, where you pay for exactly the storage that you use by the terrabyte (or part thereof), and the compute resource that you use by the minute.  We will consider these two components seperately.
+
+### Storage 
+
+In terms of storage, both vendors charge on a per terrabyte per month basis, averaged across the month and pro-rated if you use less than a full terrabyte.  The rates are as follows:
+
+| Tier      | Tier   |   Price Per Terrabyte Per Month |
+| ----------- | ----------- | ----------- |
+| Snowflake |  All      | $40       |
+| ClickHouse | Development   | $35.33        |
+| ClickHouse | Production    | $47.10        |
+
+As both vendors are storing data in the same cloud object stores, comparing storage costs is therefore an easy comparison to make.  We simply need to multiply your data storage volume by the unit price to calculate the storage costs for each platform.  
+
+One factor which could lead to different storage costs is compression.  Both platforms will compress your data efficiently and you will only be charged for the compressed data volume.  ClickHouse's own analysis claims that they can [achieve 38% better compression performance](https://ClickHouse.com/blog/ClickHouse-vs-snowflake-for-real-time-analytics-comparison-migration-guide) than Snowflake, but we haven't independently tested this and it is likely to be a function of your specific data.  This could however offset the slightly more expensive per terrabyte cost of storing data in ClickHouse Cloud.
+
+In many use cases, storage costs turn out to be immaterial in comparison with compute costs.  Storage generally is "cheap", and by the time you have enough data for the differences in storage costs to become material, differences in compute costs will likely be a more significant factor for your TCO.  
+
+### Compute 
+
+For compute, both ClickHouse Cloud and Snowflake have a pricing model based around credits or consumption units.  Snowflake refer to them as credits, whilst Clickhouse refer to them as consumption units, but these terms can be thought of interchangeably.  
+
+Both services also have different _tiers_ which provided different features and support levels.  The price of credits vary depending on which tier you choose, with higher level tiers costing more per credit.
+
+Snowflake have the following three tiers and associated costs for each credit:
+
+| Tier      | Credit / Unit Cost |
+| ----------- | ----------- |
+| Standard      | $2       |
+| Enterprise   | $3        |
+| Business Critical   | $4        |
+
+Whilst ClickHouse has two tiers and associated unit costs for each credit:
+
+| Tier      | Credit / Unit Cost |
+| ----------- | ----------- |
+| Development      | $0.21       |
+| Production   | $0.69        |
+
+These credits are then spent to acquire different amount of processing capacity or _compute resource_ for a period of time.
+
+Snowflake has different _virtual warehouse_ sizes, with bigger warehouses consuming more credits per hour:
+
+| Compute Resource      | Units Consumed Per Hour |
+| ----------- | ----------- |
+| Extra Small      | 1       |
+| Small   | 2        |
+| Medium   | 4        |
+| Large   | 8        |
+| Extra Large   | 16       |
+
+ClickHouse Cloud has a similar model, but rather than t-shirt sizes that Snowflake uses, they are transparent about the hardware which each step up buys for you.  In production, the units consumed are as follows:
+
+| Compute Resource      | Units Consumer Per Hour |
+| ----------- | ----------- |
+| 24gb & 6 VCPUs  | 1       |
+| 48gb & 12 VCPUs | 2       |
+| 72gb & 18 VCPUs | 3       |
+| 96gb & 24 VCPUs | 4     |
+| 120gb & 30 VCPUs | 5     |
+| 144gb & 36 VCPUs | 6     |
+| 168gb & 42 VCPUs | 7     |
+| 192gb & 48 VCPUs | 8      |
+
+Note how in the above tables Snowflake virtual warehouses double in credit consumption with each step up (1, 2, 4, 8, 16), whereas Clickhouse steps up linearly (1, 2, 3, 4, 5, 6) as each 24gb RAM and 6 VCPUs are added.  In addition, Clickhouse actually scales up _between_ the steps in 8g increments that use 25% of a credit, meaning we can right-size in a very accurate way rather than taking huge steps up in capacity.  This is likely to be an extremely important factor as you start to scale your environment.  
+
+Using the above information, we can now understand what each tier and compute resource combination will cost.  For instance, a small sized standard tier Snowflake instance will cost $4 per hour, whilst a 48gb & 12 VCPU ClickHouse instance will cost $1.38 per hour.
+
+The full per hour pricing table for Snowflake based on data from 23rd October 2023 is as follows:
+
+| Tier              | Compute Resource      | Cost Per Hour   |
+|-------------------|-----------------------|-----------------|
+| Standard          | Extra Small           | $2.00           |
+| Standard          | Small                 | $4.00           |
+| Standard          | Medium                | $8.00           |
+| Standard          | Large                 | $16.00          |
+| Standard          | Extra Large           | $32.00          |
+| Enterprise         | Extra Small           | $3.00           |
+| Enterprise         | Small                 | $6.00           |
+| Enterprise         | Medium                | $12.00          |
+| Enterprise         | Large                 | $24.00          |
+| Enterprise         | Extra Large           | $48.00          |
+| Business Critical  | Extra Small           | $4.00           |
+| Business Critical  | Small                 | $8.00           |
+| Business Critical  | Medium                | $16.00          |
+| Business Critical  | Large                 | $32.00          |
+| Business Critical  | Extra Large           | $64.00          |
+
+Whilst for ClickHouse, the costs per hour are as follows:
+
+| Tier          | Compute Resource  | Cost Per Hour |
+|---------------|-------------------|---------------|
+| Development   | 16gb & 2 VCPUs     | $0.21         |
+| Development   | 32gb & 4 VCPUs    | $0.42         |
+| Development   | 48gb & 6 VCPUs    | $0.63         |
+| Development   | 64gb & 8 VCPUs   | $0.84         |
+| Development   | 80gb & 10 VCPUs   | $1.05         |
+| Development   | 96gb & 12 VCPUs   | $1.26         |
+| Production    | 24gb & 6 VCPUs     | $0.69         |
+| Production    | 48gb & 12 VCPUs    | $1.38         |
+| Production    | 72gb & 18 VCPUs    | $2.07         |
+| Production    | 96gb & 24 VCPUs   | $2.76         |
+| Production    | 120gb & 30 VCPUs   | $3.45        |
+| Production    | 144gb & 36 VCPUs  | $4.14        |
+| Production    | 168gb & 42 VCPUs  | $4.82        |
+| Production    | 192gb & 48 VCPUs  | $5.51        |
+
+We can see by eyeballing the numbers that ClickHouse prices are significantly lower, both in terms of per credit costs and then as we use them to buy compute resources.  However, we still have some way to go before we can get to a fair apples-to-apples comparison.
+
+## Utilisation
+
+The next key variable for our comparison is utilisation, which is the percentage of time the resource will be used.  
+
+With a Cloud Data Warehouse, one of the key advantages is that it can be scaled up and down as needed, and potentially to zero when not in use.  For instance, you could turn off your compute servers over the weekend or overnight if not in use, meaning that we will be unlikely to utilise the instance 100% of the time.  Correspondingly, there may also be busy times of the month where you need to add additional scale to meet user demand.  
+
+With low utilisation, small differences in costs are not significant, but if you have lots of infrastructure running for most of the time then small differences in unit prices really begin to add up.
+
+In terms our model, a service that is 100% utilised would be billed for for 744 hours per month (24x31), whilst a service that is 50% utilised would be billed for 186 hours per month (24x31*0.5).
+
+Modelling different utilisation profiles, the full pricing table for Snowflake is as follows:
+
+| Tier             | Compute Resource      | 10% Utilised | 25% Utilised | 50% Utilised | 100% Utilised |
+|------------------|-----------------------|------------------------------|------------------------------|------------------------------|------------------------------|
+| Standard         | Extra Small           | $148.80                      | $372.00                      | $744.00                      | $1,488.00                    |
+| Standard         | Small                 | $297.60                      | $744.00                      | $1,488.00                    | $2,976.00                    |
+| Standard         | Medium                | $595.20                      | $1,488.00                    | $2,976.00                    | $5,952.00                    |
+| Standard         | Large                 | $1,190.40                    | $2,976.00                    | $5,952.00                    | $11,904.00                   |
+| Standard         | Extra Large           | $2,380.80                    | $5,952.00                    | $11,904.00                   | $23,808.00                   |
+| Enterprise       | Extra Small           | $223.20                      | $558.00                      | $1,116.00                    | $2,232.00                    |
+| Enterprise       | Small                 | $446.40                      | $1,116.00                    | $2,232.00                    | $4,464.00                    |
+| Enterprise       | Medium                | $892.80                      | $2,232.00                    | $4,464.00                    | $8,928.00                    |
+| Enterprise       | Large                 | $1,785.60                    | $4,464.00                    | $8,928.00                    | $17,856.00                   |
+| Enterprise       | Extra Large           | $3,571.20                    | $8,928.00                    | $17,856.00                   | $35,712.00                   |
+| Business Critical | Extra Small           | $297.60                      | $744.00                      | $1,488.00                    | $2,976.00                    |
+| Business Critical | Small                 | $595.20                      | $1,488.00                    | $2,976.00                    | $5,952.00                    |
+| Business Critical | Medium                | $1,190.40                    | $2,976.00                    | $5,952.00                    | $11,904.00                   |
+| Business Critical | Large                 | $2,380.80                    | $5,952.00                    | $11,904.00                   | $23,808.00                   |
+| Business Critical | Extra Large           | $4,761.60                    | $11,904.00                   | $23,808.00                   | $47,616.00                   |
+
+Whilst for ClickHouse, the equivalent modelled costs are as follows:
+
+| Tier             | Compute Resource      | 10% Utilised | 25% Utilised | 50% Utilised | 100% Utilised |
+|------------------|-----------------------|------------------------------|------------------------------|------------------------------|------------------------------|
+| Development | 16gb & 6 VCPUs | $15.62    | $39.06    | $78.12        | $156.24    |
+| Development | 32gb & 12 VCPUs | $31.25    | $78.12    | $156.24       | $312.48    |
+| Development | 48gb & 18 VCPUs | $46.87    | $117.18   | $234.36       | $468.72    |
+| Development | 64gb & 24 VCPUs | $62.50    | $156.24   | $312.48       | $624.96    |
+| Development | 80gb & 30 VCPUs | $78.12    | $195.30   | $390.60       | $781.20    |
+| Development | 96gb & 36 VCPUs | $93.74    | $234.36   | $468.72       | $937.44    |
+| Production  | 24gb & 6 VCPUs | $51.34    | $128.34   | $256.68       | $513.36    |
+| Production  | 48gb & 12 VCPUs | $102.67   | $256.68   | $513.36       | $1,026.72  |
+| Production  | 72gb & 18 VCPUs | $154.01   | $385.02   | $770.04       | $1,540.08  |
+| Production  | 96gb & 24 VCPUs | $205.34   | $513.36   | $1,026.72     | $2,053.44  |
+| Production  | 120gb & 30 VCPUs | $256.68   | $641.70   | $1,283.40     | $2,566.80  |
+| Production  | 144gb & 36 VCPUs | $308.02   | $770.04   | $1,540.08     | $3,080.16  |
+| Production  | 168gb & 42 VCPUs | $359.35   | $898.38   | $1,796.76     | $3,593.52  |
+| Production  | 192gb & 48 VCPUs | $410.69   | $1,026.72   | $2,053.44     | $4,106.88  |
+
+Again we can see the pattern where Snowflake prices double with each increase in warehouse size, whereas ClickHouse Cloud increase linearly as RAM and VCPUs are added in finely grained increments.
+
+## Comparisons 
+
+Let us now use the above information to compare ClickHouse Cloud and Snowflake from a TCO perspective.  
+
+As mentioned above, we are faced with a significant problem in that Snowflake do not publish exact specifications of the hardware that you are procuring to run your virtual warehouses, instead leading with t-shirt sizes such as "small" and "extra-large".   
+
+Though this represents a problem for our analysis here, it is also a problem for prospective customers trying to understand TCO of the two platforms, so we feel that educated guesses here are reasonable to make.  
+
+Though Snowflake do not publish their specifications, various evidence points towards the fact that an Extra Small instance runs with 16gb RAM, and that each step up in warehouse size doubles the available RAM (16, 32, 64, 128) etc.  This non-linear growth is in line with how the number of credits increase, making it a reasonable conclusion.  
+
+Considering this, we will make the assumption that the Snowflake t-shirt sizes correspond with the following ClickHouse instance sizes, each time doubling the capacity consumed within Clickhouse for an apples-to applies comparison.  
+
+| Snowflake Compute Resource | Clickhouse Compute Resource |
+|-----------------------------|-----------------------------|
+| Extra Small                | 24gb & 6 VCPUs               |
+| Small                      | 48gb & 12 VCPUs              |
+| Medium                     | 96gb & 24 VCPUs              | 
+| Large                      | 192gb & 48 VCPUs             |
+| Extra Large                | 384gb & 96 VCPUs             |
+
+With this table, we have been favourable to Snowflake.  For instance, the 16gb and 32gb Snowflake instances are being compared against the more powerful 24gb and 48gb instances in ClickHouse which should logically have a higher ticket price and make ClickHouse appear respectively more expensive for the equivalent unit.   
+
+In terms of tiers, we are going to compare [Snowflakes Standard tier](https://www.snowflake.com/pricing/) with [ClickHouses Production tier](https://clickhouse.com/pricing).  
+
+We could make the case that Snowflakes Enterprise tier is a more appropriate comparator as this is needed for materialised views which are a fundamental of feature in Clickhouse, but again we wanted to make the more favourable consideration for Snowflake rather than deliberately making it appear to be expensive.   
+
+It is possible to make a different selections for tiers in our <a href="https://docs.google.com/spreadsheets/d/1u9ypUw7hpxL61ZY5_qLOkuU_MxWl-n9VxSJZ3-5F9-Q/edit?usp=sharing">pricing calculator</a> if you have a different view of this.  
+
+We will now model 3 different hypothetical deployments to see how these numbers come together to impact TCO on the two platforms:
+
+#### Small Deployment
+
+Here, we have a "small" deployment where we use a small compute resource with low utlisation and 1TB of data stored.  That would give us the following total costs for the two platforms:
+
+| Vendor             | Tier             | Compute Resource      | 10% Utilised | 1TB Storage |
+|------------------|------------------|-----------------------|--------------|--------------|
+| Snowflake | Standard         | Small                 | $297.60 | $40 | 
+| ClickHouse | Production         | 48gb & 12 VCPUs                 | $102.67 | $47.10 |
+
+ClickHouse would represent a $187.83 or 55% monthly saving in this instance.
+
+#### Medium Sized Deployment
+
+Here, we scale up to a bigger workload with a medium sized compute resource with 50% utilisation and 30TB of data stored.  That would give us the following total costs for the two platforms:
+
+| Vendor             | Tier             | Compute Resource      | 50% Utilised | 30TB Storage |
+|------------------|------------------|-----------------------|--------------|--------------|
+| Snowflake | Standard         | Medium                 | $2,976.00 |  $1200 |
+| ClickHouse | Production         | 96gb & 24 VCPUs                  | $1,026.72  | $1413  |
+
+Clickhouse would represent a $1736 or 41% monthly saving in this instance.
+
+#### Large Deployment
+
+Here, we scale up to a very large server with 100% utilisation.  In reality, few organisations would have a requirement shaped like that, but we can do it to illustrate the extreme.  This situation would give us the following total costs for the two platforms:
+
+| Vendor             | Tier             | Compute Resource      | 100% Utilised | 150TB Storage |
+|------------------|------------------|-----------------------|--------------|--------------|
+| Snowflake | Standard         | Extra Large                 | $23,808.00 | $6000 |
+| ClickHouse | Production         | 384gb & 96 VCPUs                 | $10,844.46 | $7065 |
+
+ClickHouse would represent a $11899 or 40% monthly saving in this instance.
+
+This analysis of the 3 scenarios demonstrates that Clickhouse is extremely competitively priced vs Snowflake with potential 50%+ cost savings.  This could represent a significant business case when choosing a cloud data warehouse for a net new deployment or when considering a migration.  
+
+### Real World Performance
+
+Earlier, we pointed out that this analysis is based on a rudimentary model analysing per credit costs and compute resources, and that real-world total cost of ownership would likely vary for many reasons.  
+
+That said, I would argue that the likely cost profile benefits are weighted even further in favour of ClickHouse even as we move off a spreadsheet and into a real-world setting.
+
+Firstly, ClickHouse is distinguished for it's performance in terms of rapidly ingesting and querying data.  This means that we can use smaller servers, smaller clusters, and scale our clusters down more aggressively to serve the same number of users with the same performance characteristics.  This means that not only are our instance hours much cheaper, we likely need less of them in many real world situations.
+
+With Clickhouse, there is also a tendancy and the option to query raw data directly rather than use heavily normalised tables as we would sometimes do in Snowflake.  This means that significant ETL/ELT work can be avoided when ingesting data which is often a source of hidden cost in cloud data warehousing.  Where we do need to clean or pre-aggregate data, Clickhouse's powerful _materialised view_ features can be used to reduce query processing dramatically.
+
+As we have pointed out throughout this article, ClickHouse scales up and down in 8gb increments, with costs changing linearly.  This is in contrast with Snowflake which rises exponentially with each step up in virtual warehouse size.  Together with the auto-scaling features of ClickHouse Cloud, this means that your instances can regularly and accurately be right-sized without any need for overcapacity.  This is likely to be very significant as your environment begins to grow.  
+
+Finally, we would point towards [this article published by Clickhouse](https://clickhouse.com/blog/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis) which provides a more real-world view of costs when performing activities such as data loading and querying.  This complements our own analysis well with that real-world perspective, whilst also coming to similiar conclusions with regards to the potential savings.  
+
+### Conclusion
+
+In this article we have demonstated how ClickHouse Cloud is significantly more cost effective than Snowflake in terms of headline prices.  
+
+We fully modelled the costs based on tiers and compute resources, and saw how they scaled with different utilisation profiles. 
+
+We then modelled 3 real-world examples, and demonstrated cost savings of between 40% and 55% for different workloads.  
+
+Though our analysis is fairly heavily caveated, we believe that the numbers are very compelling in the favour of ClickHouse and the broad conclusions hold.  This should remain the case as we move into real-world usage scenarios as evidenced by [ClickHouse's own work on relative TCO](https://clickhouse.com/blog/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis#cost-analysis).
+
+We encourage you to use our pricing calculator, accessed via the link below to understand your own cost profile and the potential ROI of a migration project.  Please also reach out to us for an ROI and business case analysis of your own environment and datasets.   
+
+<InformationEmbed url="https://docs.google.com/spreadsheets/d/1u9ypUw7hpxL61ZY5_qLOkuU_MxWl-n9VxSJZ3-5F9-Q/edit?usp=sharing" title="Click here for our pricing calculator and the analysis behind this article"></InformationEmbed>
+
+</Article>

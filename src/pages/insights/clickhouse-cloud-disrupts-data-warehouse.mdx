@@ -1,21 +1,22 @@
 ---
 title: Why ClickHouse Cloud Disrupts The Data Warehouse Industry 
-date_published: 2023-10-07T22:06:16.000Z
-date_updated: 2023-10-07T14:39:30.000Z
+description: In recent years, when I have been asked by businesses which data warehouse to choose, there were 3 candidates at the top of the list
+date_published: 2023-10-07
+date_updated: 2023-10-07
 order: 11
-image: /x.jpg
-featured_image: ./images/4.jpg
-background_color:
-    - "#DF6B9C"
-    - "#E74C68"
+featured_image: 4.jpg
 tag: General
-featured_posts: 15, 14, 13, 12
 
 authorName1: Benjamin Wootton
 authorTitle1: Founder & CTO, Ensemble
-authorImage1: /assets/authors/benjamin-wootton.jpg
+authorImage1: /images/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
+
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
 
 In recent years, when I have been asked by businesses which data warehouse to choose, there were 3 candidates at the top of the list.
 
@@ -42,4 +43,5 @@ The economic side is significant too.  Though I think managed services are a goo
 With ClickHouse, you have the option of starting with ClickHouse Cloud, but you always have the option of taking your ball and migrating to your own data centre if the economics do begin to look better for you, in a way which you cannot do with Snowflake, Databricks, BigQuery or Redshift.
 
 I think that when you intersect all of these benefits, ClickHouse Cloud is really setup to disrupt the Data Warehousing market.  Options of managed service or running your own in the data centre, clean cloud native architecture, different economic models across cloud or self hosted, open source foundations, and then the performance and feature profile of ClickHouse are a really unique combination which I think has real potential to disrupt the landscape.
- 
+    
+</Article>

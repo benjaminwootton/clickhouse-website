@@ -23,7 +23,7 @@ interface Props {
 
 // Filter posts by activeTag if it is provided
 if (activeTag) {
-    filteredPosts = posts.filter((post: any) => post.frontmatter.category === activeTag);
+    filteredPosts = posts.filter((post: any) => post.frontmatter.tag === activeTag);
 } else {
     filteredPosts = posts;
 }
@@ -35,15 +35,15 @@ const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
 // Tags
 let tags: any = [];
 posts.forEach((post: any) => {
-    if (post.frontmatter.category) {
-        const category = post.frontmatter.category;
-        const existingTag = tags.find((tag: any) => tag.name === category);
+    if (post.frontmatter.tag) {
+        const tag = post.frontmatter.tag;
+        const existingTag = tags.find((tag: any) => tag.name === tag);
         if (existingTag) {
             existingTag.amount += 1;
         } else {
             tags.push({
-                url: category.toLowerCase().replaceAll(' ', '-'),
-                name: category,
+                url: tag.toLowerCase().replaceAll(' ', '-'),
+                name: tag,
                 amount: 1,
             });
         }
@@ -90,8 +90,17 @@ const activeStyle = `bg-white`
         <ul id="posts-container" class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
             {filteredPosts?.map((loop: any, i: number) => {
                 // Find the corresponding image using the image path from frontmatter
-                const imagePath = `../assets/insights/${loop.frontmatter.image}`;
+                const imagePath = `../assets/insights/${loop.frontmatter.featured_image}`;
                 const imageModule = postImages[imagePath];
+
+                  // Convert the date string to a Date object
+                const dateString = loop.frontmatter.date;
+                const dateObject = new Date(dateString);
+                const formattedDate = dateObject.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
 
                 return (
                     (!maxAmountOfPosts || maxAmountOfPosts > i) &&
@@ -111,10 +120,10 @@ const activeStyle = `bg-white`
                         </div>
 
                         <div class="flex justify-between gap-2 items-center mt-1 text-sm">
-                            {loop.frontmatter.author && 
-                                <p>{loop.frontmatter.author}</p>
+                            {loop.frontmatter.authorName1 && 
+                                <p>{loop.frontmatter.authorName1}</p>
                             }
-                            <p class="text-[#808080]">{loop.frontmatter.date}</p>
+                            <p class="text-[#808080]">{formattedDate}</p>
                         </div>
 
                         <a 
@@ -125,7 +134,13 @@ const activeStyle = `bg-white`
                         </a>
 
                         {loop.frontmatter.description && 
-                            <p>{loop.frontmatter.description}</p>
+                            <p>
+                                {loop.frontmatter.description?.length > 190 ? 
+                                    loop.frontmatter.description.slice(0, 190) + '...'
+                                    :
+                                    loop.frontmatter.description
+                                }
+                            </p>
                         }
 
                         <p class="flex gap-2 items-center text-sm">
