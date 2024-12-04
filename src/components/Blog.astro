@@ -18,6 +18,9 @@ interface Props {
     showTags?: boolean,
     maxAmountOfPosts?: number,
 }
+
+const tagStyle = `px-4 py-2 no-underline rounded-3xl flex gap-2`
+const activeStyle = `bg-white`
 ---
 
 <section class="">
@@ -28,7 +31,7 @@ interface Props {
 
         {showTags && 
             <div class="flex justify-center gap-2 mb-8 bg-light-blue px-6 py-4 rounded-3xl w-full">
-                <a href="/insights/">All</a>
+                <a class={tagStyle} href="/insights/">All News</a>
             </div>
         }
 
@@ -40,17 +43,19 @@ interface Props {
 
                 return (
                     (!maxAmountOfPosts || maxAmountOfPosts > i) &&
-                    <li class="relative">
-                        {imageModule && (
-                            <Picture
-                                src={imageModule.default}
-                                alt={loop.frontmatter.coverAlt || ''}
-                                loading="lazy"
-                                class="aspect-[400/220]"
-                            />
-                        )}
+                    <li class="relative group">
+                        <div class="overflow-hidden">
+                            {imageModule && (
+                                <Picture
+                                    src={imageModule.default}
+                                    alt={loop.frontmatter.coverAlt || ''}
+                                    loading="lazy"
+                                    class="aspect-[400/220] group-hover:scale-105 transition-transform duration-300"
+                                />
+                            )}
+                        </div>
 
-                        <div class="flex justify-between gap-2 items-center text-sm">
+                        <div class="flex justify-between gap-2 items-center mt-1 text-sm">
                             {loop.frontmatter.author && 
                                 <p>{loop.frontmatter.author}</p>
                             }
@@ -59,7 +64,7 @@ interface Props {
 
                         <a 
                             href={`${loop.url}/`}
-                            class="text-[1.35rem] no-underline after:absolute after:top-0 after:left-0 after:w-full after:h-full"
+                            class="text-[1.35rem] no-underline after:absolute my-1 block after:top-0 after:left-0 after:w-full after:h-full"
                         >
                             {loop.frontmatter.title}
                         </a>
@@ -67,6 +72,13 @@ interface Props {
                         {loop.frontmatter.description && 
                             <p>{loop.frontmatter.description}</p>
                         }
+
+                        <p class="flex gap-2 items-center text-sm">
+                            Read More 
+                            <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.9466 4.97339C11.879 4.81049 11.7495 4.68104 11.5866 4.61339C11.5065 4.57923 11.4204 4.56111 11.3333 4.56006H4.66663C4.48982 4.56006 4.32025 4.6303 4.19522 4.75532C4.0702 4.88035 3.99996 5.04991 3.99996 5.22673C3.99996 5.40354 4.0702 5.57311 4.19522 5.69813C4.32025 5.82315 4.48982 5.89339 4.66663 5.89339H9.72663L4.19329 11.4201C4.13081 11.482 4.08121 11.5558 4.04737 11.637C4.01352 11.7182 3.99609 11.8054 3.99609 11.8934C3.99609 11.9814 4.01352 12.0685 4.04737 12.1498C4.08121 12.231 4.13081 12.3048 4.19329 12.3667C4.25527 12.4292 4.329 12.4788 4.41024 12.5127C4.49148 12.5465 4.57862 12.5639 4.66663 12.5639C4.75463 12.5639 4.84177 12.5465 4.92301 12.5127C5.00425 12.4788 5.07798 12.4292 5.13996 12.3667L10.6666 6.83339V11.8934C10.6666 12.0702 10.7369 12.2398 10.8619 12.3648C10.9869 12.4898 11.1565 12.5601 11.3333 12.5601C11.5101 12.5601 11.6797 12.4898 11.8047 12.3648C11.9297 12.2398 12 12.0702 12 11.8934V5.22673C11.9989 5.13961 11.9808 5.05354 11.9466 4.97339Z" fill="black"/>
+                            </svg>
+                        </p>
                     </li>
                 );
             })}
