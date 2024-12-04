@@ -12,18 +12,27 @@ const postsImport = await import.meta.glob('../pages/insights/*.mdx', { eager: t
 const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
 const posts = Object.values(postsImport);
 
-const { showTags, maxAmountOfPosts } = Astro.props;
+const { showTags, maxAmountOfPosts, activeTag } = Astro.props;
+const currentPage = Number(Astro.url.searchParams.get('page') || 1);
+const postsPerPage = 12;
+const totalPages = Math.ceil(posts.length / postsPerPage);
 
 interface Props {
     showTags?: boolean,
     maxAmountOfPosts?: number,
+    activeTag?: string,
 }
 
 const tagStyle = `px-4 py-2 no-underline rounded-3xl flex gap-2`
 const activeStyle = `bg-white`
 ---
 
-<section class="">
+<section 
+    class=""
+    id="blog"
+    data-total-pages={Math.ceil(posts.length / postsPerPage)}
+    data-posts-per-page={postsPerPage}
+>
     <div class="wrapper">
         <div class="max-w-[40rem] mb-8 empty:hidden">
             <slot />
@@ -31,11 +40,19 @@ const activeStyle = `bg-white`
 
         {showTags && 
             <div class="flex justify-center gap-2 mb-8 bg-light-blue px-6 py-4 rounded-3xl w-full">
-                <a class={tagStyle} href="/insights/">All News</a>
+                <a
+                    class={`
+                        ${tagStyle}
+                        ${!activeTag ? activeStyle : ''}
+                    `}
+                    href="/insights/"
+                >
+                    All News
+                </a>
             </div>
         }
 
-        <ul class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
+        <ul id="posts-container" class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
             {posts?.map((loop: any, i: number) => {
                 // Find the corresponding image using the image path from frontmatter
                 const imagePath = `../assets/insights/${loop.frontmatter.image}`;
@@ -43,7 +60,10 @@ const activeStyle = `bg-white`
 
                 return (
                     (!maxAmountOfPosts || maxAmountOfPosts > i) &&
-                    <li class="relative group">
+                    <li 
+                        class="relative group"
+                        data-post-index={i}
+                    >
                         <div class="overflow-hidden">
                             {imageModule && (
                                 <Picture
@@ -75,13 +95,126 @@ const activeStyle = `bg-white`
 
                         <p class="flex gap-2 items-center text-sm">
                             Read More 
-                            <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11.9466 4.97339C11.879 4.81049 11.7495 4.68104 11.5866 4.61339C11.5065 4.57923 11.4204 4.56111 11.3333 4.56006H4.66663C4.48982 4.56006 4.32025 4.6303 4.19522 4.75532C4.0702 4.88035 3.99996 5.04991 3.99996 5.22673C3.99996 5.40354 4.0702 5.57311 4.19522 5.69813C4.32025 5.82315 4.48982 5.89339 4.66663 5.89339H9.72663L4.19329 11.4201C4.13081 11.482 4.08121 11.5558 4.04737 11.637C4.01352 11.7182 3.99609 11.8054 3.99609 11.8934C3.99609 11.9814 4.01352 12.0685 4.04737 12.1498C4.08121 12.231 4.13081 12.3048 4.19329 12.3667C4.25527 12.4292 4.329 12.4788 4.41024 12.5127C4.49148 12.5465 4.57862 12.5639 4.66663 12.5639C4.75463 12.5639 4.84177 12.5465 4.92301 12.5127C5.00425 12.4788 5.07798 12.4292 5.13996 12.3667L10.6666 6.83339V11.8934C10.6666 12.0702 10.7369 12.2398 10.8619 12.3648C10.9869 12.4898 11.1565 12.5601 11.3333 12.5601C11.5101 12.5601 11.6797 12.4898 11.8047 12.3648C11.9297 12.2398 12 12.0702 12 11.8934V5.22673C11.9989 5.13961 11.9808 5.05354 11.9466 4.97339Z" fill="black"/>
-                            </svg>
+                            <img
+                                src="/images/icons/up-arrow.svg"
+                                width="16"
+                                height="17"
+                                loading="lazy"
+                                alt=""
+                            />
                         </p>
                     </li>
                 );
             })}
         </ul>
+
+        <div id="pagination" class="flex justify-center items-center gap-2 mt-8">
+            <a 
+                href={`/insights/?page=${currentPage - 1}`} 
+                class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
+                    flex justify-center items-center no-underline mr-2 hover:bg-gray-100
+                    pointer-events-none opacity-50
+                "
+            >
+                <img
+                    src="/images/icons/arrow-right.svg"
+                    width="16"
+                    height="16"
+                    loading="lazy"
+                    class="rotate-180"
+                    alt="Previous page"
+                />
+            </a>
+            
+            {[...Array(totalPages).keys()]?.map((_, i) => (
+                <a 
+                    href={`/insights/?page=${i + 1}`}
+                    data-number={i + 1}
+                    class={`
+                        max-w-[48px] min-w-[48px] h-[48px] border rounded-full hover:bg-gray-100
+                        flex justify-center items-center no-underline
+                        ${i === 0 ? 'border-black' : ''}
+                    `}
+                >
+                    {i + 1}
+                </a>
+            ))}
+            
+            {currentPage < totalPages && (
+                <a 
+                    href={`/insights/?page=${currentPage + 1}`} 
+                    class="max-w-[48px] min-w-[48px] h-[48px] border rounded-full
+                        flex justify-center items-center no-underline ml-2 hover:bg-gray-100
+                    "
+                >
+                    <img
+                        src="/images/icons/arrow-right.svg"
+                        width="16"
+                        height="16"
+                        loading="lazy"
+                        alt="Next page"
+                    />
+                </a>
+            )}
+        </div>
     </div>
 </section>
+
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+        const section = document.getElementById('blog');
+        const postsContainer = document.getElementById('posts-container');
+        const allPosts = postsContainer.querySelectorAll('li');
+        const paginationLinks = document.querySelectorAll('#pagination a[data-number]');
+        const prevPageLink = document.querySelector('#pagination a[href*="page="]');
+        const nextPageLink = document.querySelector('#pagination a[href*="page="] img[alt="Next page"]').closest('a');
+
+        // Get current page from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPage = Number(urlParams.get('page') || 1);
+
+        const totalPages = Number(section.dataset.totalPages);
+        const postsPerPage = Number(section.dataset.postsPerPage);
+
+        // Set correct href for previous page link
+        if (currentPage === 1) {
+            prevPageLink.classList.add('pointer-events-none', 'opacity-50');
+            prevPageLink.removeAttribute('href');
+        } else {
+            prevPageLink.href = `/insights/?page=${currentPage - 1}`;
+            prevPageLink.classList.remove('pointer-events-none', 'opacity-50');
+        }
+
+        // Set correct href for next page link
+        if (currentPage === totalPages) {
+            nextPageLink.classList.add('pointer-events-none', 'opacity-50');
+            nextPageLink.removeAttribute('href');
+        } else {
+            nextPageLink.href = `/insights/?page=${currentPage + 1}`;
+        }
+
+        // Highlight current page number
+        paginationLinks.forEach(link => {
+            if (Number(link.getAttribute('data-number')) === currentPage) {
+                link.classList.add('border-black');
+            } else {
+                link.classList.remove('border-black');
+            }
+        });
+
+        // Initially hide all posts
+        allPosts.forEach(post => {
+            post.style.display = 'none';
+        });
+
+        // Show posts for the current page
+        const startIndex = (currentPage - 1) * postsPerPage;
+        const endIndex = startIndex + postsPerPage;
+
+        allPosts.forEach((post, index) => {
+            if (index >= startIndex && index < endIndex) {
+                post.style.display = 'block';
+            }
+        });
+    });
+</script>
