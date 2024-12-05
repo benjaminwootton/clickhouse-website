@@ -97,7 +97,7 @@ const activeStyle = `bg-white`
                 const imageModule = postImages[imagePath];
 
                   // Convert the date string to a Date object
-                const dateString = loop.frontmatter.date;
+                const dateString = loop.frontmatter.date_published;
                 const dateObject = new Date(dateString);
                 const formattedDate = dateObject.toLocaleDateString('en-US', {
                     year: 'numeric',
