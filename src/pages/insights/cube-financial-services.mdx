@@ -17,9 +17,10 @@ authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
 
-import { getImage, GatsbyImage } from 'gatsby-plugin-image';
-import Html from '../../src/components/BlogPostHtml'
-import InformationEmbed from '../../src/components/mdx/InformationEmbed'
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+<Article data={frontmatter}>
 
 Last week we delivered a webinar with the [Cube](https://cube.dev) team, covering why we believe that Cube is an excellent fit for building data-oriented applications.
 

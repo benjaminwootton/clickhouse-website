@@ -17,9 +17,11 @@ authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
 
-import { getImage, GatsbyImage } from 'gatsby-plugin-image';
-import Html from '../../src/components/BlogPostHtml'
-import InformationEmbed from '../../src/components/mdx/InformationEmbed'
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
 
 <InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/9206f58c-0bde-4dae-94d7-aa9379773d84/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
 

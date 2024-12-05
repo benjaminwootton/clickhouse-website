@@ -17,9 +17,11 @@ authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
 
-import { getImage, GatsbyImage } from 'gatsby-plugin-image';
-import Html from '../../src/components/BlogPostHtml'
-import InformationEmbed from '../../src/components/mdx/InformationEmbed'
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
 
 ClickHouse recently published an excellent article describing how cloud data warehouses such as Snowflake and Redshift [are coming under pressure in the face of new customer demands](https://clickhouse.com/blog/the-unbundling-of-the-cloud-data-warehouse).  
 

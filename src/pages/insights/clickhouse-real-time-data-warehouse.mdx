@@ -17,7 +17,11 @@ authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
 
-import { getImage, GatsbyImage } from 'gatsby-plugin-image';
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
 
 When you think of data warehouse technology, you may think of legacy on premise offerings such as Oracle or Terradata, or more modern cloud based platforms such as Snowflake, AWS Redshift or BigQuery.
 
