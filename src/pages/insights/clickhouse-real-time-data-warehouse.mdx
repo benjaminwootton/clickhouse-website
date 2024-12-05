@@ -1,0 +1,78 @@
+---
+title: Using ClickHouse Cloud As A Real Time Data Warehouse
+order: 99
+tag: Tools
+image: /x.jpg
+featured_image: ./images/61.jpg
+date_published: 2024-01-28T17:29:51.000Z
+date_updated: 2024-01-28T10:52:19.000Z
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+featured_posts: 26, 28, 29, 32
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+When you think of data warehouse technology, you may think of legacy on premise offerings such as Oracle or Terradata, or more modern cloud based platforms such as Snowflake, AWS Redshift or BigQuery.
+
+There is however a new kid on the block which we think is a [better proposition than all of these](/blog/clickhouse-cloud-disrupts-data-warehouse) for data warehousing workloads.  It's [ClickHouse Cloud](https://clickhouse.com), the cloud hosted managed service offered by the people behind the ClickHouse open source project.
+
+ClickHouse Cloud meets the table stakes required for a cloud data warehouse, but goes beyond this in many ways.  The most significant of these is in how it enables what is being called the _real-time data warehouse_ which we think is becoming a more important part of the analytics world.
+
+## What Is A Real Time Data Warehouse?
+
+The traditional cloud data warehousing workload has been simple, with relatively few data sources, predictable reports and dashboards and a relatively small user community.
+
+<img src="./images/simple.png"/>
+
+This is evolving towards a picture like this, where we have a much more complex environment surrounding the cloud data warehouse:
+
+<img src="./images/complex.png"/>
+
+Features of this new world include:
+
+- More concurrent consumers - Businesses increasingly need employee facing applications to incorporate sophisticated analytics, and often they would like to include user facing analytics in their products. In this environment, we are going from a situation where we have tens of concurrent users to user communities in the thousands;
+
+- Higher volumes of more complex data - The datasets that we work with will continue to grow in size, incorporating data from more origins including high volume machine generated sources such as AI/ML models. This data will also tend towards being more complex over time;
+
+- More complex and interactive access patterns - The access patterns for employees and end customers will be increasingly interactive and exploratory rather than the relatively predictable and repeatable reports that we historically deployed;
+
+- More automation - Companies will want to ingest more machine generated data, and use it to drive more automated process such as training machine learning models and inference engines. This can generate an order of magnitude more data and processing load.
+
+- Demands for fresher and real-time data - All of the above will increasingly need to be built on fresher or ideally real-time data to support operational use cases and real-time product experiences.
+
+You may argue about whether some of these needed today, and the pace of the change, but it is clearly the direction of travel that businesses will want to do more sophisticated things with higher volumes of fresher data over time.  
+
+## Why Traditional Data Warehousing Falls Short
+
+Cloud Data Warehouses such as Snowflake and Redshift are excellent products, but they were not designed for this world where we have huge amounts of data being ingested, the need to transform it in real-time, and then expose this fresh data to thousands of concurrent users.
+
+Instead, databases of this era were designed for relatively infrequent batch updates, where data is extracted from source systems and uploaded into the warehouse on a schedule.  Though many have implemented streaming techniques, they were fundamentally not built on real-time foundations.
+
+From a cost perspective, [their cost models are also not designed for this access pattern](https://ensembleai.io/blog/comparing-clickhouse-snowflake-pricing).  The only way to meet high volumes of concurrent users is by adding more expensive compute which scales non linearly in unit cost. 
+
+Though some may push back on this analysis, most data engineers would agree that it would be a very bad idea to use Snowflake or Redshift as the backend to a web application that exposes it's analytics to thousands of end users.
+
+## Why ClickHouse Cloud Fills This Gap
+
+We think that ClickHouse fits the bill as a real-time data warehouse, serving both business intelligence type workloads and real-time analytics workloads in one unified piece of technology. 
+
+Firstly, it meets the table stakes requirements of a data warehouse in that it is an analytical database designed for large scale analytical OLAP workloads.  It is a SQL based, relational and has good support for business intelligence tools such as PowerBI and Tableau.  And yes, it also supports joins!
+
+As with the other cloud data warehouses, ClickHouse Cloud is fully managed and has a Snowflake like user experience, where you simply put in a credit card and begin using it.  It seperates compute and storage, scales up and scales down to zero when not in use.  These make it stack up well compared with the competition.  
+
+Then, it begins to move beyond these table stakes and differentiates with it's blazing fast performance.  It is able to scale to petabytes of data and returns queries in sub-second, providing very fast ingestion, high levels of compression, and the ability to service a large community of concurrent users who are all issuing complex and interactive queries.
+
+The benefits of this are real.  By unifying the technologies, you now have one piece of technology where historically you may have needed two, together with the ability to enable your business with real time analytics across your consolidated business data.  And all at [50% of the cost of a Snowflake deployment](https://ensembleai.io/blog/comparing-clickhouse-snowflake-pricing).
+
+The business case for a migration is possibly there, but startups and scaleups looking to build their first cloud data warehouse should definetly give this stack serious consideration.  

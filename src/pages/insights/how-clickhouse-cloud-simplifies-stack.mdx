@@ -1,0 +1,55 @@
+---
+title: How ClickHouse Cloud Simplifies Your Data Stack
+date_published: 2024-01-17T14:06:16.000Z
+date_updated: 2024-01-17T14:39:30.000Z
+order: 12
+image: /x.jpg
+featured_image: ./images/82.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 44, 45, 46, 47
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+In recent years, many data teams bought into the [modern data stack](/learn/categories/moderndatastack) tooling and philosophy.  This involved combining a number of fully managed cloud based tools to extract, load and then transform data within cloud data warehouses prior to serving it up to business users.  
+
+Despite the fact that these tools were fully managed, data teams still invested considerable effort in building and maintaining their modern data stacks.  They would for instance ship lots of data into their cloud data warehouses and then spend considerable time working on dbt transformations to decompose and reorganise the data to make it analysis ready.  
+
+As well as the manpower costs associated with this work, infrastructure and licensing costs also ballooned in this time period.  Because tools like Fivetran and Snowflake are consumption based and money was flowing freely, data engineers could be quite wasteful in managing compute resources and processing data in inefficient ways. 
+
+This period has left data teams with a legacy of expensive manpower, infrastructure and SaaS bills and more complexity than is strictly needed to meet the business aims.  This is especially true when you consider the fact that these stacks were often just serving business intelligence workloads to internal users as opposed to anything that impacted the customer experience.  
+
+## ClickHouse Cloud Simplifies This
+
+[One of the many things that we like](/why-clickhouse-cloud) about ClickHouse Cloud is how it can simplify your data technology stack, replacing many of these components with a single powerful engine, and unpicking some of this complexity and reducing the expense that has built up.  For instance:
+
+- ClickHouse Cloud is a *fully managed and serverless solution* with a Snowflake like user experience.  You simply add a credit card and begin using it with very little configuration.  For companies who are operating within AWS, Azure or GCP environments, this feature alone strips out the complexity involved with administering cloud environments;
+
+- It can scale up and scale down to zero automatically meaning that there is no always-on infrastructure to fund;
+
+- Because of it's performance, the philosophy and approach of working with ClickHouse is to ingest and process relatively raw data.  Though there are situations where it still makes sense to clean and transform data prior to consumption, ClickHouse at least offers the potential to query raw, fresh data without the whole _analytics engineering_ process which has developed in recent years; 
+
+- ClickHouse's powerful materialised views also have a role to play in reducing this type of transformation work that has typically taken place using dbt.  We can simply build materialised views in plain SQL, and benefit from things like rollups, aggregations, analytical functions and time bound data without needing to depend on an external tool;
+
+- ClickHouse has a great story around integration.  Using external table engines like the [MySQL table engine](https://clickhouse.com/docs/en/engines/table-engines/integrations/mysql) and the [Postgres table engine](https://clickhouse.com/docs/en/engines/table-engines/integrations/postgresql) you are able to connect directly into transactional databases to either query them directly or to load data from them.  This could avoid the need for a Fivetran type tool to move data between transactional and analytical systems;
+
+
+- As ClickHouse can support both [data warehousing](/solutions/usecase/realtime-dwh) and [user facing analytics](/solutions/usecase/user-facing-analytics) workloads, there is no need to introduce a seperate speed layer such as a Redis cache alongside your data warehouse.  Instead, your user facing applications and websites can connect directly to ClickHouse to query the most up to data;
+
+- The fact that ClickHouse is SQL based means that your business intelligence tools can connect to it, and your data scientists can use it.  This avoids the complexity of NoSQL solutions such as Elastic, Druid and MongoDB which can be hard for people to extract data from.
+
+When you combine these together, you go from a world where we have lots of different tools, multiple databases, various ETL processes and a whole industry of analytics engineers writing dbt, to one where we are leaning on a very powerful core engine which is ingesting data, transforming and serving it to lots of users concurrently.  
+
+Yes, all of the components of the old modern data stack still add value and may still be necessary in certain situations, but I think ClickHouse Cloud has a huge simplification angle at a time when many data teams are looking for exactly that.  

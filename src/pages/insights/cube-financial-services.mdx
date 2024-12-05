@@ -1,0 +1,133 @@
+---
+title: Using Cube And ClickHouse To Power Data Applications In Financial Services
+date_published: 2024-05-13T14:06:16.000Z
+date_updated: 2024-05-13T14:39:30.000Z
+order: 12
+image: /x.jpg
+featured_image: ./images/84.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 23,25,26,29,30
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+<Article data={frontmatter}>
+
+Last week we delivered a webinar with the [Cube](https://cube.dev) team, covering why we believe that Cube is an excellent fit for building data-oriented applications.
+
+<img src="./images/cube-webinar-clean.png"/>
+
+Whilst Cube has applications across many industries and use cases, we specifically focussed on financial services due to their unique challenges and additional demands for security, compliance, governance, and controls.
+
+## What Do We Mean By Data Applications?
+
+I like to draw a distinction between dashboards and data applications.
+
+Dashboards are typically designed using tools such as Tableau, PowerBI, or Superset and are used by data analysts with SQL skills.  Visually, they include data tables, charts, and key numbers, and aim  to efficiently communicate essential data points to the viewer.
+
+Although dashboards can offer some interactivity such as select list filters and drill-downs, they tend to be fairly limited in this regard and in their support for ad-hoc exploration.  
+
+In terms of time horizon, dashboards usually look backward over weeks and months to summarise past events for decision makers.
+
+Data applications, while still oriented towards analytics and including many of the same visual elements, differ significantly in philosophy and implementation.
+
+Firstly, they are much more diverse in their user interface and user experience than simple dashboards. They look more like applications and may include forms and screens for data entry, or business logic that guides users through workflow processes. 
+
+They tend to be much more interactive than business intelligence dashboards with much more complex navigation through the datasets in ways that enable the employees using them. 
+
+Although this is not always the case, data applications tend to be more operational in nature, meaning they are more likely to incorporate real-time data.
+
+In terms of technology, data applications are typically implemented by software engineers using frameworks such as React which gives the developer full control over the user experience.  
+
+Data applications tend to be much more powerful and impactful than dashboards, but the trade off is that they do require more development effort.  The ideal situation is for businesses to develop bespoke data applications with an effort profile similar to that of a dashboard.  This is where we believe Cube can help!
+
+## Financial Services Lens
+
+We began last weeks webinar by discussing some of the unique challenges associated with the financial services industry from a data and analytics perspective.
+
+To generalize heavily, we believe that financial services suffer from poor data _democratization_. They do tend to have lots of valuable data, but much of it is trapped within legacy line-of-business applications and databases.  Many of these systems do not have an API, making the data difficult to access and incorporate into applications by developers from other parts of the business.
+
+In response to this, financial services often develop numerous point-to-point integrations to transfer data between systems, implementing bespoke data extracts and API calls.  In addition, they create various reports and dashboards embedded directly into applications.  This all results in a complex and fragile data environment that is complex and expensive to maintain.
+
+When financial services businesses want to innovate with their data, security and compliance requirements add further complexity.  For instance, data access must be limited to the appropriate individuals and roles, and everything must be audited, logged, and tracked to prevent misuse.
+
+Finally, there is an increasing demand for fresh data in the financial services space.  Use cases related to sales and trading, portfolio management, or compliance tools all benefit from real-time visibility of data.  Batch extracts and integrations that run every 24 hours are inadequate in this context.
+
+## Where Cube Adds Value
+
+My belief is that Cube elegantly solves many of these challenges in one convenient package. I always describe it as offering a lot of value in one box.
+
+To understand the value of Cube, it is worth thinking about it in terms of it's component layers as shown on this diagram:
+
+<img src="./images/cube.png"/>
+
+Firstly, Cube allows a business to *quickly set up developer-oriented REST or GraphQL APIs* in front of transactional databases or data warehouses. This can rapidly accelerate data access and democratization by enabling developers to build systems on top of data previously stored in siloed locations.
+
+Out of the box, Cube incorporates a *powerful results cache* that requires virtually no configuration. This enables multiple concurrent consumers to access data quickly without adding load to the underlying database or systems. Given that some systems in financial services are legacy or expensive to scale, this can be a hugely important architectural factor.
+
+Next, the data modeling and semantic layer features of Cube allow businesses to *agree on common definitions of concepts* such as accounts, trades, bonds, quotes, and payments.  Once agreed upon, these definitions can be shared across all data applications and dashboards.  This single source of consistent truth can enhance data confidence and contribute to overall business efficiency.
+
+Finally, the *security and governance features of the semantic layer* neatly meet the requirements of financial services businesses.  Your Cube models can expose a subset of rows or columns, and features like query rewrites offer additional governance options that are easy to demonstrate to auditors. Cube can also be deployed as a centralized capability across the business or group, ensuring that all data access is brokered by a single gateway rather than through ad-hoc point integrations.
+
+Again, there are few pieces of technology which can rapidly level up how you work with data to such a degree.
+
+## How We Architect Data Applications At Ensemble
+
+Using Cube to build operational data applications on top of data warehouses and data lakes is a very common pattern that we are deploying here at Ensemble.  They typicallly have an appearance somewhat like this, showing multiple data oriented components but with more flexibility over the user experience than we would have with a dashboard:
+
+<img src="./images/cubeoperational.png"/>
+
+When aiming to build an application like this, the first step is typically to use Cube to stand up GraphQL APIs in front of the data store.  These APIs allow our developers to build applications using an API construct they are familiar with, without needing to use native database APIs or concern themselves with object-relational mapping.
+
+Next, we iterate on the semantic layer in Cube by modelling the entities and data needed in our application. At this point, we can leverage Cube's security features by limiting the rows and columns that are exposed, implementing data masking, and integrating with our authentication system to add security into the solution.
+
+We usually use React or Next.js as the client side application framework for our data applications.  Because of the component based nature of React, we set up a pattern where each component requests it’s data from Cube as the page renders.  This leads to a snappy user experience and a clean code layout.  
+
+Our aspiration for these applications is that data updates in real-time without a page refresh. We achieve this by using Cube's subscription features, which periodically poll the database and push updates to our React application over a WebSocket. Ordinarily, this type of work would require extensive engineering with Kafka, WebSockets, and client-side development. The combination of Cube and React makes this very easy to implement and elegant.
+
+Our applications are typically deployed onto S3 and distributed with CloudFront. They interact with Cube Cloud for a fully serverless and scalable solution.
+
+## Combining Cube and ClickHouse
+
+Though Cube can support many transactional and analytical databases, given full control of the stack, our preferred backing database and the one we are using most often deploying it with is [ClickHouse](https://clickhouse.com).  
+
+ClickHouse is an open source OLAP data warehouse which is known for it’s performance.  It allows for the ingestion of large volumes of data which can be instantly queried.  This makes it suitable as a backing store for real time operational applications.    
+
+As well as simple aggregations, ClickHouse incorporates a range of analytical functions which mean that more processing can be carried out directly in the database, reducing the burden on application developers.   
+
+Finally, ClickHouse incorporates powerful materialised view functionality which means that derived views can be updated immediately as new events are continually ingested into the base tables.
+
+We have written extensively about ClickHouse on our [blog](/blog), describing why we think it is differentiated database and a great platform for building real-time analytical applications.  
+
+When we add ClickHouse to Cube, we are giving our developers GraphQL or REST access to real time and big data which can be incrementally updated as new data is ingested.  When we consider the fact that Cube can then push this data to our React based user interface, this gives us a front to back stack where data can be streamed into the data warehouse, processed, and pushed out to web clients to render without a page refresh.  This is an elegant technology stack and solution to a complex problem which would have required lots of engineering with the likes of Kafka and Web Sockets.  
+
+<img src="./images/clickhousecubeback.png"/>
+
+## In Summary
+
+In this article, we discussed how Cube adds a lot of value in a single component, and elegantly solves many of the problems encountered in the data and analytics stacks of large financial services businesses.
+
+After comparing traditional dashboards and rich data applications how we architect data applications at Ensemble, explaining how we build React based applications which update as data is pushed into them in real time and without a page refresh.
+
+Finally, we explained the power of combining this stack with the real time OLAP database ClickHouse, giving us an end to end real time analytics stack which is simple and cost effective.
+
+As a next step, please visit a recording of the webinar or see our demonstration of an operational analytics application build using this stack.  Please also consider checking out Cube, one of our favourite pieces of data technology! 
+
+<InformationEmbed url="https://vimeo.com/944161050" title="Click here to see the webinar"></InformationEmbed>
+
+### 
+
+<InformationEmbed url="/cube-ensemble-slides.pdf" title="Click here to download the slide deck"></InformationEmbed>
+
+### 
+
+<InformationEmbed url="https://www.youtube.com/watch?v=ZO-yDXDrPDY" title="Click here to see a demonstration of this stack"></InformationEmbed>

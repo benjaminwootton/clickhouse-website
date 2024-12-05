@@ -1,0 +1,299 @@
+---
+title: Linear Regression Using Clickhouse Machine Learning Functions
+date_published: 2023-11-06T14:06:16.000Z
+date_updated: 2023-11-06T14:39:30.000Z
+order: 12
+image: /x.jpg
+featured_image: ./images/26.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 23,25,26,29,30
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+
+<InformationEmbed url="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/9206f58c-0bde-4dae-94d7-aa9379773d84/draft/logic" title="Click here for the sample notebook"></InformationEmbed>
+
+This article is part of a series where we look at doing data science work within [ClickHouse](https://clickhouse.com).  Articles in this series include [forecasting](/blog/forecasting-using-clickhouse), [anomaly detection](/blog/anomaly-detection-using-clickhouse), [linear regression](/blog/linear-regression-using-clickhouse) and [time series classification](/blog/time-series-analysis-using-clickhouse).
+
+Though this type of analysis would more typically take place outside of ClickHouse in a programming language such as Python or R, our preference is to take things as far as possible using just the database.  
+
+By doing this, we can rely on the power of ClickHouse to process large datasets with high performance, and reduce or even totally avoid the amount of code that we need to write.  This also means that we can work with smaller in-memory datasets on the client side and potentially avoid the need for distributed computation using frameworks such as Spark.  
+
+## About This Example 
+
+In this article, we will carry out a simple linear regression analysis, which we will use to predict delivery times based on two variables - the distance of the delivery and the hour the package was picked up for delivery.  
+
+We will work with and render geographical data as part of the analysis, for instance making use of Clickhouse's [geoDistance](https://clickhouse.com/docs/en/sql-reference/functions/geo/coordinates) function to calculate distances based on geographical coordinates.
+
+## Dataset
+
+Our dataset is a small extract of this [last-mile delivery dataset](https://huggingface.co/datasets/Cainiao-AI/LaDe) by Hugging Face. 
+
+Though the dataset is large and detailed, we will look at a subset of 2,293 orders delivered by a single courier, number 75, in region 53 of the Chinese city of Jilin in order to make it easier to follow the example.  
+
+A preview of the data is shown below.  We only use the columns with the times and locations of the courier's pickups and deliveries, in addition to the order ids.  
+
+```
+SELECT *
+FROM deliveries
+LIMIT 5
+
+Query id: f2fb9292-3b14-4bc1-b9dd-780e941e1fee
+
+┌─order_id─┬─────accept_gps_time─┬─accept_gps_lat─┬─accept_gps_lng─┬───delivery_gps_time─┬─delivery_gps_lat─┬─delivery_gps_lng─┐
+│     7350 │ 2022-07-15 08:45:00 │       43.81204 │       126.5669 │ 2022-07-15 13:38:00 │         43.83002 │         126.5517 │
+│     7540 │ 2022-07-21 08:27:00 │       43.81219 │      126.56692 │ 2022-07-21 14:27:00 │         43.82541 │        126.55379 │
+│     7660 │ 2022-08-30 08:30:00 │       43.81199 │      126.56993 │ 2022-08-30 13:52:00 │         43.82757 │        126.55321 │
+│     8542 │ 2022-08-19 09:09:00 │       43.81219 │      126.56689 │ 2022-08-19 15:59:00 │         43.83033 │        126.55078 │
+│    12350 │ 2022-08-05 08:52:00 │       43.81215 │      126.56693 │ 2022-08-05 09:10:00 │         43.81307 │        126.56889 │
+└──────────┴─────────────────────┴────────────────┴────────────────┴─────────────────────┴──────────────────┴──────────────────┘
+
+5 rows in set. Elapsed: 0.030 sec. Processed 2.29 thousand rows, 64.18 KB (75.64 thousand rows/s., 2.12 MB/s.)
+Peak memory usage: 723.95 KiB.
+```
+
+Using our [Hex Notebook](https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/9206f58c-0bde-4dae-94d7-aa9379773d84/draft/logic), we can easily render a heatmap of the delivery locations around Jilin, observing that more deliveries occur in central areas:
+
+<Html>
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=319ff4bb-ffb2-4010-82ac-13075454903a" ></iframe>
+</div>
+</Html>
+
+Our model will also take account of the pickup time as a second variable.  Therefore, we will also visualise the distribution of the number of orders by pickup hour and can observe that most packages are collected at 8am in the morning.
+
+<Html>
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=298a62ee-1656-407a-a058-6983ba2a2ae7" ></iframe>
+</div>
+</Html>
+
+## Data Preparation
+
+Our model will predict the time elapsed between the pickup and delivery (in minutes) as a function of the distance between the pickup and the delivery locations (in meters) and of the pickup hour. 
+
+We use Clickhouse [geoDistance](https://clickhouse.com/docs/en/sql-reference/functions/geo/coordinates#geodistance) function for calculating the distance between the pickup and the delivery locations given their coordinates (latitude and longitude), while we use Clickhouse [date_diff](https://clickhouse.com/docs/en/sql-reference/functions/date-time-functions#date_diff) function for calculating the time elapsed between pickup and delivery.
+
+We also add to the dataset a randomly generated training index using [randUniform](https://clickhouse.com/docs/en/sql-reference/functions/random-functions) function, which is equal to 1 for 80% of the data, which will be used for training, and equal to 0 for the remaining 20% of the data, which will be used for testing performance of the model.
+
+```
+create or replace table 
+    deliveries_dataset (
+        order_id UInt32,
+        delivery_time Float64,
+        delivery_distance Float64,
+        Hour7 Float64,
+        Hour8 Float64,
+        Hour9 Float64,
+        Hour10 Float64,
+        Hour11 Float64,
+        Hour12 Float64,
+        Hour13 Float64,
+        Hour14 Float64,
+        Hour15 Float64,
+        Hour16 Float64,
+        training Float64
+    )
+engine = MergeTree
+order by order_id
+```
+
+```
+insert into
+    deliveries_dataset
+select 
+    order_id,
+    date_diff('minute', accept_gps_time, delivery_gps_time) as delivery_time,
+    geoDistance(accept_gps_lng, accept_gps_lat, delivery_gps_lng, delivery_gps_lat) as delivery_distance,
+    if(toHour(accept_gps_time) = 7, 1, 0) as Hour7,
+    if(toHour(accept_gps_time) = 8, 1, 0) as Hour8,
+    if(toHour(accept_gps_time) = 9, 1, 0) as Hour9,
+    if(toHour(accept_gps_time) = 10, 1, 0) as Hour10,
+    if(toHour(accept_gps_time) = 11, 1, 0) as Hour11,
+    if(toHour(accept_gps_time) = 12, 1, 0) as Hour12,
+    if(toHour(accept_gps_time) = 13, 1, 0) as Hour13,
+    if(toHour(accept_gps_time) = 14, 1, 0) as Hour14,
+    if(toHour(accept_gps_time) = 15, 1, 0) as Hour15,
+    if(toHour(accept_gps_time) = 16, 1, 0) as Hour16,
+    if(randUniform(0, 1) <= 0.8, 1, 0) as training
+from 
+    deliveries
+```
+
+When visualised, delivery distance and delivery time are positively correlated with greater variance as journeys get longer.  This is intuitively as we would expect as longer journeys become harder to predict.
+
+<Html>
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=fb21ea51-595e-481a-9a2d-57d41813ffb9" ></iframe>
+</div>
+</Html>
+
+ ## Model Training 
+
+ We use Clickhouse's stochasticLinearRegression function for fitting the linear regression model based on the 80% of our dataset which contains training data.  
+ 
+ Given that this function uses gradient descent, we scale the delivery distance (which is the only continuous feature) by subtracting the training set mean and dividing by the training set standard deviation.  We take the logarithm of the target to make sure that the time to delivery predicted by the model is never negative.
+
+```
+create view 
+    deliveries_model 
+as with
+    (select avg(delivery_distance) from deliveries_dataset where training = 1) as loc,
+    (select stddevSamp(delivery_distance) from deliveries_dataset where training = 1) as scale
+select
+    stochasticLinearRegressionState(0.1, 0.0001, 15, 'SGD')(
+        log(delivery_time), 
+        assumeNotNull((delivery_distance - loc) / scale),
+        Hour7,
+        Hour8,
+        Hour9,
+        Hour10,
+        Hour11,
+        Hour12,
+        Hour13,
+        Hour14,
+        Hour15,
+        Hour16
+    ) 
+as 
+    state
+from 
+    deliveries_dataset 
+where training = 1
+```
+
+
+## Model Evaluation
+
+We can now use the fitted model to make predictions for the remaining 20% of our dataset.  We will do this by comparing the predicted delivery times with the actuals to calculate the accuracy of our model.    
+
+```
+create view 
+    deliveries_results
+as with
+    (select avg(delivery_distance) from deliveries_dataset where training = 1) as loc,
+    (select stddevSamp(delivery_distance) from deliveries_dataset where training = 1) as scale,
+    (select state from deliveries_model) as model
+select
+    toInt32(delivery_time) as ACTUAL,
+    toInt32(exp(evalMLMethod(
+        model, 
+        assumeNotNull((delivery_distance - loc) / scale),
+        Hour7,
+        Hour8,
+        Hour9,
+        Hour10,
+        Hour11,
+        Hour12,
+        Hour13,
+        Hour14,
+        Hour15,
+        Hour16
+    ))) as PREDICTED
+from
+    deliveries_dataset 
+where training = 0
+```
+
+We now have a table of ACTUAL delivery times and PREDICTED delivery times for the 20% test portion of our dataset.
+
+```
+SELECT *
+FROM deliveries_results
+LIMIT 10
+
+Query id: 2a4cee84-bf43-4925-947e-c9f0a149c05f
+
+┌─ACTUAL─┬─PREDICTED─┐
+│    410 │       370 │
+│    101 │       122 │
+│    361 │       214 │
+│    189 │        69 │
+│    122 │        92 │
+│    454 │       365 │
+│    155 │       354 │
+│    323 │       334 │
+│    145 │       153 │
+│     17 │        20 │
+└────────┴───────────┘
+
+10 rows in set. Elapsed: 0.015 sec. Processed 9.17 thousand rows, 267.76 KB (619.10 thousand rows/s., 18.07 MB/s.)
+Peak memory usage: 2.28 MiB.
+```
+
+We can also plot these visually as per below in our notebook:
+
+
+<Html>
+<div class="hex-embed">
+<iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=045a07eb-700b-4814-a8a9-2fd83e1a3fc5" ></iframe>
+</div>
+</Html>
+
+To explain the plot, if the model was performing perfectly, then we would expect PREDICTED and ACTUAL to match in every case, meaning that all points would line up on the orange curve.  In reality, our model did have errors which we will now analyse.
+
+
+## Model Performance
+
+Looking at the visualisation above, we can see that our model performed relatively well for shorter journeys less than 120 minutes, but predictive accuracy begins to fall away for longer distance journeys as they become more complex and harder to predict.  
+
+This would be in line with our real-world experience whereby the longer and more arduous a journey is, the harder it is to predict.  
+
+More scientifically, we can evaluate the models performance by looking at the model's mean absolute error (MAE) and root mean squared error (RMSE).  This gives us a value of approximately 1 hour across the entire dataset:
+
+```
+SELECT
+    avg(abs(ACTUAL - PREDICTED)) AS MAE,
+    sqrt(avg(pow(ACTUAL - PREDICTED, 2))) AS RMSE
+FROM deliveries_results
+
+Query id: 0082d2a2-4735-4cf6-8d0e-dba4e010a918
+
+┌───────────────MAE─┬──────────────RMSE─┐
+│ 58.18494623655914 │ 78.10208373578114 │
+└───────────────────┴───────────────────┘
+
+1 row in set. Elapsed: 0.022 sec. Processed 9.17 thousand rows, 267.76 KB (407.90 thousand rows/s., 11.91 MB/s.)
+Peak memory usage: 2.28 MiB.
+```
+
+If we limit this to just the shorter journeys with an ACTUAL of less than 2 hours (120 minutes), then we can see that our model performs better with an MAE and RMSE closer to 30 minutes:
+
+```
+SELECT
+    avg(abs(ACTUAL - PREDICTED)) AS MAE,
+    sqrt(avg(pow(ACTUAL - PREDICTED, 2))) AS RMSE
+FROM deliveries_results
+WHERE ACTUAL < 120
+
+Query id: edb8eef0-24a7-4579-a856-4e3f3e10cd20
+
+┌────────────────MAE─┬──────────────RMSE─┐
+│ 29.681159420289855 │ 41.68671981213744 │
+└────────────────────┴───────────────────┘
+
+1 row in set. Elapsed: 0.014 sec. Processed 9.17 thousand rows, 267.76 KB (654.46 thousand rows/s., 19.11 MB/s.)
+Peak memory usage: 2.35 MiB.
+```
+
+## Conclusion 
+
+In this article we have demonstrated how we can use a simple linear regression function to predict output values based on 2 input variables.  
+
+The performance of the model was resasonable at shorter distances, but began to break down as the output variable became harder to predict.  That said, we can see that a simple linear regression conducted entirely within ClickHouse and using only 2 variables does have some predictive capability and may perform better in other datasets and domains.
+
+## Sample Notebook
+
+A notebook describing the full worked example can be found at [this URL](https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/9206f58c-0bde-4dae-94d7-aa9379773d84/draft/logic).
