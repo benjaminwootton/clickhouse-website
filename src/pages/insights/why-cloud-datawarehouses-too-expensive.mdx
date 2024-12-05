@@ -1,0 +1,126 @@
+---
+title: Why Cloud Data Warehouses Are Too Expensive For Emerging Data Requirements
+date_published: 2023-11-13T14:06:16.000Z
+date_updated: 2023-11-13T14:39:30.000Z
+order: 12
+image: /x.jpg
+featured_image: ./images/45.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 25,29,30,11
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import { getImage, GatsbyImage } from 'gatsby-plugin-image';
+import Html from '../../src/components/BlogPostHtml'
+import InformationEmbed from '../../src/components/mdx/InformationEmbed'
+
+ClickHouse recently published an excellent article describing how cloud data warehouses such as Snowflake and Redshift [are coming under pressure in the face of new customer demands](https://clickhouse.com/blog/the-unbundling-of-the-cloud-data-warehouse).  
+
+As this is also a key part of our thesis in how the data world is evolving, we wanted to add our own perspective and explain why we believe <a href="https://clickhouse.com">ClickHouse Cloud</a> is so well placed to fill the emerging gap.
+
+Rather than get into yet another benchmarking argument, we wanted to dedicate most of the conversation to discussing the cost angle, as we believe that this will become such a significant pain point that it drives businesses to re-evaluate their data stack.   
+
+Already, many businesses are finding that their cloud data warehousing costs are unsustainable, and we expect this to be an increasingly common situation as they try to stretch the technology to meet more demanding and sophisticated use cases.
+
+## The Traditional Cloud Data Warehouse Approach 
+
+The traditional cloud data warehouse deployment looks like this:
+
+<img src="./images/simple.png"/>
+
+In this picture, we have relatively few data sources such as line of business applications and SaaS tools feeding into the centralised data warehouse.
+
+Data is loaded into the warehouse periodically in a batch using tools such as [FiveTran](https://www.fivetran.com/).  It is then transformed, again as a batch, using tools such as [dbt](https://www.getdbt.com/).  
+
+This use of batch processing implies delays between when data is created and when it is finally available to view, meaning that real-time is not really a feature of this approach.
+
+The primary route for consuming the data and analytics is through reporting and dashboard frontends which render data from the data warehouse.  These are then accessed by a relatively small pool of executives and managers who use them to support strategic decision making over long term time horizons.  
+
+## Future State
+
+In the coming years, businesses data requirements are likely to trend towards something like this:
+
+<img src="./images/complex.png"/>
+
+The key features of this evolution are:
+
+- _More concurrent consumers_ - Businesses increasingly need employee facing applications to incorporate sophisticated analytics, and often they would like to include _user facing analytics_ in their products.  In this environment, we are going from a situation where we have tens of concurrent users to user communities in the thousands.  
+
+- _Higher volumes of more complex data_ - The datasets that we work with will continue to grow in size, incorporating data from more origins including high volume machine generated sources such as AI/ML models.  This data will also tend towards being more complex over time.  
+
+- _More complex and interactive access patterns_ - The access patterns for employees and end customers will be increasingly interactive and exploratory rather than the relatively predictable and repeatable reports that we historically deployed.  
+
+- _More automation_ - Companies will want to ingest more machine generated data, and use it to drive more automated process such as training machine learning models and inference engines.  This can generate an order of magnitude more data and processing load.
+
+- _Demands for fresher and real-time data_ - All of the above will increasingly need to be built on fresher or ideally real-time data to support operational use cases and real-time product experiences.
+
+We can argue about the pace of change, but there is simply no world where businesses have less data and want to do simpler things with it.  The demands are only going one way and they are increasing exponentially.
+
+## Cloud Data Warehouses Become Exponentially Expensive In This World
+
+Our belief is that cloud data warehouses become un-economical as we move into the new world, because they do not scale well enough, and they do not have a pricing model that is suited for the new access pattern.
+
+Though we would like to avoid technical benchmarking comparisons in this article, we would make the point that cloud data warehouses are simply not designed for real-time workloads and highly concurrent access patterns.  Because of this, our only route to scalability is to add more compute capacity which makes them a fundamentally expensive proposition to scale with.  
+
+Beyond expensive unit costs, the pricing and business model behind cloud data warehouses was designed for a different access pattern.  Cloud data warehouses stacked up from a business case perspective  because they could be scaled up and down in line with user demand.  Many businesses with vanilla BI requirements could get by with only running their cloud data warehouses for just a few hours per month to support infrequent access patterns and stale data.  
+
+In the new world however, we need to have more servers running with higher uptime in order to support all of the concurrent users with their demanding requirements.  
+
+By playing with a pricing calculator, you will see that even a small deployment of a platform such as Snowflake becomes expensive if we assume it is running 24x7.  
+
+This is magnified greatly if we then need to add more capacity to support more concurrent users.  If we naively scale by adding bigger or additional servers then we are taking this expensive always-on cost and multiplying it.  
+
+To illustrate this with some real numbers, in [our article comparing ClickHouse and Snowflake pricing](/blog/comparing-clickhouse-snowflake-pricing), we found that Snowflake is more expensive than ClickHouse for small deployments, but that the difference in pricing becomes very significant as we move up to larger deployments.
+
+We modelled a small deployment with low utilisation would cost an extra $187/month in Snowflake compared with ClickHouse:
+
+| Vendor             | Tier             | Compute Resource      | 10% Utilised | 1TB Storage |
+|------------------|------------------|-----------------------|--------------|--------------|
+| Snowflake | Standard         | Small                 | $297.60 | $40 | 
+| ClickHouse | Production         | 48gb & 12 VCPUs                 | $102.67 | $47.10 |
+
+We then modelled a larger deployment with high utilisation which would cost an extra $11899/month in Snowflake.  A similiar percentage increase but a huge additional cost.  
+
+| Vendor             | Tier             | Compute Resource      | 100% Utilised | 150TB Storage |
+|------------------|------------------|-----------------------|--------------|--------------|
+| Snowflake | Standard         | Extra Large                 | $23,808.00 | $6000 |
+| ClickHouse | Production         | 384gb & 96 VCPUs                 | $10,844.46 | $7065 |
+
+In large enterprise deployments supporting large use bases, this could rapidly become a $multi-million delta.  The economics of cloud data warehousing for high user loads, high concurrent access, and highly utilised servers are terrible. 
+
+Please note, we are not implying that everyone immediately needs to run fully utilised XL instances.  These numbers are examples to demonstrate how the cost models scale with additional load as we move into this new world. 
+
+## The Solution 
+
+Data teams are taking various steps to solve the problem of enabling their large communities of employees and customers with real-time analytics.  
+
+Solutions used today include pre-computing data in batches, using caches such as Redis, or running a fast OLAP database such as ClickHouse in front of the cloud data warehouse to meet latency requirements for specific use cases.
+
+Though this can work tactically, the need to either split or duplicate data between data stores is always a red flag.  We then have two sets of data to keep in line and two technologies to run which requires significant engineering and support costs.   
+
+A _significantly_ better approach is to implement a single unified technology which can serve both the business intelligence and real-time use cases.  Operationally, this keeps things much simpler, is more flexible, and costs much less.  
+
+We believe that [ClickHouse](https://clickhouse.com), and in particular [ClickHouse Cloud](https://clickhouse.com) is one of very few data platforms that can serve all of these requirements whilst also having a scalable commercial model.  It is built on real-time foundations and support highly concurrent use cases, whilst also being able to scale back down to more vanilla business intelligence requirements.   
+
+In [our article comparing ClickHouse and Snowflake pricing](https://ensembleai.io/blog/comparing-clickhouse-snowflake-pricing) we identifed that ClickHouse Cloud is less than half the cost of Snowflake in terms of buying the equivalent compute capacity.  And when you consider the fact that ClickHouse performs much better and more scalably, the same workloads can be served with even less infrastructure.  This means that we are paying less for less compute capacity to meet an equivalent set of user requirements.  
+
+More significantly, by going down the route of a single analytical database serving all of these workloads, you avoid the need to run two datastores or caches, and can strip out significant ETL work.  This saves an incredible amount of engineering and management time and potentially licensing and hosting costs by virtue of the much simplified architecture.
+
+With a simplified environment, less compute time at less unit costs, ClickHouse Cloud feels a much more financially viable platform for supporting emerging data requirements.
+
+## Data Driven Applications And Products
+
+There are much bigger outcomes to be had than just a simple IT infratsructure cost play though.
+
+Today, nobody wants to use their cloud data warehouse as an application backend.  The technology isn't right, and costs will remain under focus each time we use the warehouse as the back-end for some application or product. 
+
+However, with the right technology at the heart of our data platform, we could feasibly get to a situation where applications all over the business are able to integrate deeply with the warehouse and build rich real-time analytics directly into their user experience. 
+
+This is the real source of value here.  Freeing valuable data out of an expensive data warehouse and actually extracting business value from it.  

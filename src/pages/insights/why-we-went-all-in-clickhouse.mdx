@@ -1,0 +1,57 @@
+---
+title: Why We Went "All In" On ClickHouse
+date_published: 2023-06-01T01:00:00.000Z
+date_updated: 2023-06-01T01:00:00.000Z
+order: 1
+tag: ClickHouse 
+image: /x.jpg
+featured_image: ./images/51.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+featured_posts: 1, 2, 3 
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+--- 
+
+import { getImage, GatsbyImage } from 'gatsby-plugin-image';
+
+Historically, enterprise data and analytics systems have been built around batch processing.  This involves collecting new data into batches which are then processed on an hourly or daily schedule.  As data often has to move between multiple systems, this can mean that users receive their data on dashboards or reports a significant amount of time after the original business event took place.  
+
+Increasingly, businesses want to move beyond this and make use of their data in real-time.  They realise that the earlier they can react to their business data, the sooner they can extract value from it and use it to drive their customer and employee experience in differentiated ways.  
+
+Unfortunately, moving from batch to streaming and real-time analytics is a significant leap.  The entire way in which we collect, transform, store, query and display information needs to be updated to work with a continuous stream of data as opposed to infrequent batches.  Not only is this model more technically complex, it also requires new technology and new programming models.  
+
+## Why ClickHouse?
+
+A real-time analytics platform requires different technical approaches from the moment that data is created till when it is acted upon or rendered on a screen.  However, at the heart of that, there needs to be a datastore which can rapidly ingest and process data, and then serve online interactive queries with high performance.   
+
+Though there are many databases and data warehouses on the market, ClickHouse is arguably the highest performing analytical database available.  Yes, benchmarks are notoriously tricky, controversial and situational dependent, but ClickHouse is widely acknowledged as being extremely performant, especially when working with logs, events and time series type data that we are typically interested in for real-time analytics work. 
+
+Beyond it's raw performance, ClickHouse also incorporates a number of features which make it particularly appropriate for real time analytics workloads.  For instance:
+
+- _Materialised views_ allow us to pre-compute query results ahead of time as data is ingested; 
+- _MergeTree table engines_ work behind the scenes to organise and combine data to make it as efficient as possible to query; 
+- _Projections_ allow us to build different views of our data which can be used to speed up interactive and ad-hoc queries; 
+- Native integrations with streaming platforms such as _Kafka_ allow us to rapidly ingest and publish streaming data continuously.
+
+Though these features are powerful in their own right, they also allow us to simplify our technology stack.  For instance, when we have such a powerful engine at the centre of the stack, there is often less requirement for stream processing and data transformation work.  It truly is the pragmatic solution which avoids effort and makes a lot of data technology redundant.
+
+## ClickHouse vs the Competition
+
+ClickHouse also has a number of non-functional properties which make it compelling in comparison with other data platform products and vendors.  
+
+It is open source, meaning that it is free to download, use and modify.  This means that it can be downloaded and deployed in your own data centre or on your own cloud server without any dependence on a commercial vendor.  This is an important option where the economics of self management make sense to your organisation. 
+
+Where you do opt for self management, ClickHouse is known to be simple to operate.  It is ran as a single binary, and architecturally it is simple to understand even at scale and in a clustered environment.
+
+This said, it can also be ran through <a href="https://clickhouse.com">ClickHouse Cloud</a>, a managed service ran by ClickHouse Inc.  This offers the same managed experience and architectural patterns as platforms such as Snowflake and Databricks, allowing you to avoid the overhead of managing platforms and freeing you to concentrate on the genuinely differentiating analytics work.  This managed service also comes with very compelling economics compared with competing products.  
+
+## Going All In 
+
+Though ClickHouse isn't the right choice for all data requirements, all things considered, we feel confident in standing behind it as our preferred platform for real-time and advanced analytical workloads.
+
+Having made this decision, we have now been able to go deep into the platform and build signficant experience in using ClickHouse to power advanced analytical applications.  We now bring this experience to the table with customers across many industries helping them deploy end-to-end data solutions with requirements for big data, low latency and complex analytics.

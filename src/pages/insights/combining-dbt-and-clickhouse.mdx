@@ -1,0 +1,73 @@
+---
+title: Combining dbt And ClickHouse 
+date_published: 2023-06-17T01:00:00.000Z
+date_updated: 2023-06-17T01:00:00.000Z
+order: 1
+tag: ClickHouse
+image: /x.jpg
+featured_image: ./images/7.jpg
+background_color:
+    - "#DF6B9C"
+    - "#E74C68"
+featured_posts: 30, 31, 32, 35, 36, 37
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+--- 
+
+import { getImage, GatsbyImage } from 'gatsby-plugin-image';
+import InformationEmbed from '../../src/components/mdx/InformationEmbed'
+
+<InformationEmbed url="https://www.youtube.com/watch?v=gS07tUxZYAk" title="See our video on Combining dbt and ClickHouse Cloud"></InformationEmbed>
+
+[dbt](https://getdbt.com) is a popular open-source tool that is used for defining and running data transformations within data warehouses. 
+
+Typically, it has been used against cloud data warehouses such as Snowflake, BigQuery and Redshift to transform relational data and structure it for traditional business intelligence purposes.  
+
+This said, it still has value when used against ClickHouse and when working with the type of data that is usually stored within it.  In this article we will explain why this is the case and the role it potentially has to play.
+
+## Is dbt relevant for ClickHouse?
+
+At first glance, dbt is slightly less useful and relevant in the context of ClickHouse.  
+
+Firstly, ClickHouse is less often used for traditional data warehousing built around star schemas and heavily normalised tables.   
+
+In that world, we need transformation processes to transform from ingested data to output tables suitable for consumption by the business.  
+
+Though ClickHouse _can_ be used for Data Warehousing use cases, it is more often used to work with relatively raw event data which is then queried directly.  This means that overall, data transformation is slightly less relevant when working with ClickHouse and the type of data that it stores.   
+
+Where we do need transformations, ClickHouse also has powerful features such as materialised views and table engines to transform data as it is ingested.  This can avoid the need for an external transformation tool and allow us to solve similar problemds without any dependency on an external tool. 
+
+Finally, dbt is also a batch processing tool which runs periodically, thus implying a delay between having our data ingested and having it ready for consumption.   When working with ClickHouse, we often have requirements around latency or a desire for real-time analytics, again rendering dbt inappropriate.  
+
+## How dbt Complements ClickHouse
+
+This said, dbt can still potentially bring a number of benefits which we will now consider. 
+
+dbt is a fantastic tool which has experienced very rapid industry uptake.  Many of the reasons for this are still relevant and complementary when operating against ClickHouse:
+
+- dbt puts a better development process around your data transformations.  It allows you to extract them into organised source files which can be source controlled, tested, and executed against environments in a consistent way;
+
+- dbt incorporates automated testing as a first class citizen, using simple SQL statements or plain text configuration to encourage the use of testing;
+
+- dbt has good support for running against seperate development, test and production environments, and supports a local developer process.
+
+- dbt is easy to automate as part of a DevOps pipeline.  The model code can be checked into source code where it can be branched and merged.  It can then be incorporated into CI/CD processes and tested and deployed automatically when changes are committed;
+
+- dbt is simple and accessible to all of the data professionals in your business.  Most people with any data experience can pick it up, run it on their laptop, and start understanding and contributing to the codebase.
+
+This isn't to say that these qualities can't be acheived with a more native ClickHouse setup.  Indeed, there is a solution to all of them.  However, dbt does excel slightly in all of these areas and make them simple by virtue of it's design and SQL based models.
+
+## Should We Do This?
+
+This leaves us with a tradeoff.  
+
+On the one hand, transformations are slightly less relevant in the context of ClickHouse, and ClickHouse has a good toolbox for helping us do transformation work internally and with more performance without an orchestration tool such as dbt.
+
+On the other hand, dbt gives us a much more defined and rigorous software development lifecycle around our database development which will help development scale over time.  
+
+Our thoughts are that dbt should definetly be used when we have more business intelligence oriented workloads and can tolerate delays associated with batch data transformations.
+
+As requirements become more real-time and the data tends towards being more _event oriented_, dbt may still have a role to play in your ClickHouse deployment, but the choice of where to use it is more nuanced.
