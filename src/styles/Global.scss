@@ -127,6 +127,51 @@ img, video {
     display: block;
 }
 
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    color: #333333;
+    margin: 2rem 0;
+    border: 1px solid #e0e0e0;
+
+    thead {
+        background-color: #f4f4f4;
+        
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #d0d0d0;
+            font-weight: 600;
+        }
+    }
+
+    tbody {
+        tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.3s ease;
+
+            &:hover {
+                background-color: #f9f9f9;
+            }
+
+            td {
+                padding: 10px 15px;
+                vertical-align: middle;
+            }
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+    }
+
+    @media screen and (max-width: 768px) {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
 .hover-underline-effect-parent .hover-underline-effect-child,
 .hover-underline-effect {
     position: relative;
