@@ -10,8 +10,14 @@ type ImageModule = {
 // Import dynamically
 const postsImport = await import.meta.glob('../pages/insights/*.mdx', { eager: true });
 const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
-let posts = Object.values(postsImport);
 let filteredPosts = [];
+
+// Sort posts by date (most recent first)
+let posts = Object.values(postsImport).sort((a: any, b: any) => {
+    const dateA = new Date(a.frontmatter.date_published);
+    const dateB = new Date(b.frontmatter.date_published);
+    return dateB.getTime() - dateA.getTime();
+});
 
 const { showTags, maxAmountOfPosts, activeTag } = Astro.props;
 
