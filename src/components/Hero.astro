@@ -28,6 +28,18 @@
     .gradient-blob:nth-child(4) { animation-delay: -4s; }
     .gradient-blob:nth-child(5) { animation-delay: -5s; }
     .gradient-blob:nth-child(6) { animation-delay: -6s; }
+
+    @media (max-width: 768px) {
+        .gradient-blob {
+            transform: scale(0.8);
+        }
+        
+        svg {
+            top: -15% !important;
+            left: -50% !important;
+            width: 200% !important;
+        }
+    }
 </style>
 
 <section class="bg-black py-[5rem] relative text-white overflow-hidden">
