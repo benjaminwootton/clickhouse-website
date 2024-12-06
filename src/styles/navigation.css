@@ -1,0 +1,8 @@
+/* Navigation and Footer link size adjustments */
+header nav a {
+    font-size: 0.875rem !important; /* 1px smaller than current 0.9375rem */
+}
+
+footer nav a {
+    font-size: 0.875rem !important;
+}

@@ -1,0 +1,60 @@
+---
+title: Load And Performance Testing Your ClickHouse Deployment With K6
+description: We’ve recently used K6 to directly load test a ClickHouse environment and found it to be very powerful and expressive. 
+date_published: 2024-12-17
+date_updated: 2024-12-17
+order: 12
+featured_image: 10.jpg
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+
+<Article data={frontmatter}>
+K6 is an open source tool for load and performance testing.  It allows you to simulate a number of virtual users that interact with your system in parallel, and capture statistics about how the system under load performs including response times and error rates.   
+
+As well as capturing statistics about your systems performance, you can also assert that behaviour is correct and that performance is within acceptable limits giving us an explicit pass or fail.
+ 
+Though there are many load testing tools available, both free and commercial, K6 is very lightweight and developer centric, with everything configured through scripting and exposed as JSON files.  It is therefore a great tool for ClickHouse developers and operators who are used to working at a relatively low level.  
+
+K6 allows you to describe your test scenarios as JavaScript, and then fine tune the nature of your tests including the number of virtual users, how they scale up and down, and how they interact with your system.  
+We’ve recently used K6 to directly load test a ClickHouse environment and found it to be very powerful and expressive.  Anyone who runs a ClickHouse instance either open source or in the cloud would be well served by running some load testing to understand how their system scales and where its limits are.  This could be done by running the tests directly against ClickHouse via one of its API routes to isolate the database.  
+
+### Why Load Test Your ClickHouse Deployment?
+
+There are a number of benefits to directly load testing your ClickHouse instance in this way:
+
+- Optimise your user experience - better understand your query latency under real world user loads and against real datasets in order to identify where to target optimisation efforts.    
+- Understand your systems limits - understand where you are likely to hit resource limits which would result in application level errors or a process crash.  
+- Capacity and cost planning - better plan for capacity and avoid the need for overprovisioning.  Better understand and predict costs. 
+- Test competing approaches - try different approaches such as different table engines and primary key schemes and quantitatively understand how they perform.   	
+
+This could of course be complemented with higher level 
+
+### Types Of Tests
+
+Database load testing is more nuanced than you may initially think.  As a starting point, there are a number of different types of load tests:
+
+- Average Load Tests - Observe how the database performs under a typical set of queries and typical user load.  
+- Stress Tests - Observe how the database performs when under high load or near its known limits.  
+- Breakpoint Tests - Increasingly scale up the user load to understand key breaking points and limits.  
+- Spike Tests - Observe how the database performs with sudden short spikes of high activity.  
+- Soak Tests - Observe how the database performs over a long period of activity.  
+
+When executing these tests, it’s important to capture a representative set of queries.  Any reporting workload or application will, and it’s important.  
+
+Practical Considerations
+
+Set of tests
+
+
+
+
+
+</Article>
