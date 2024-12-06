@@ -5,6 +5,8 @@ const nav = [
     { name: 'Insights', href: '/insights/' },
     { name: 'Contact', href: '/contact/' },
 ];
+
+const pathname = new URL(Astro.request.url).pathname;
 ---
 
 <header
@@ -16,7 +18,7 @@ const nav = [
     id="header"
 >
     <div class="wrapper flex justify-between items-center">
-        <div class="w-[250px]">
+        <div class="w-[200px]">
             <a href="/">
                 <img
                     src="/images/clickhouse-logo.svg"
@@ -24,8 +26,7 @@ const nav = [
                     alt="ClickHouse logo"
                     loading="eager"
                     fetchpriority="high"
-                    width="250"
-                    height="120"
+                    width="150"
                 />
             </a>
         </div>
@@ -40,14 +41,15 @@ const nav = [
                 justify-end items-center
             ">
                 {nav.map((loop) => (
-                    <li>
+                    <li class="min-w-[80px] text-center">
                         <a
                             href={loop.href}
-                            class="
+                            class={`
                                 text-white
                                 no-underline text-[0.9375rem]
-                                hover-underline-effect
-                            "
+                                hover-underline-effect font-medium
+                                ${pathname === loop.href || (pathname.startsWith(loop.href) && loop.href !== '/') ? 'font-semibold' : ''}
+                            `}
                         >
                             {loop.name}
                         </a>
