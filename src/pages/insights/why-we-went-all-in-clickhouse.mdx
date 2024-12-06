@@ -5,7 +5,7 @@ date_updated: 2023-06-01T01:00:00.000Z
 order: 1
 tag: ClickHouse 
 image: /x.jpg
-featured_image: 51.jpg
+featured_image: 119.jpg
 description: ClickHouse is a uniquely differentiated database which we decided to take a big bet on.
 background_color:
     - "#DF6B9C"
@@ -13,7 +13,7 @@ background_color:
 featured_posts: 1, 2, 3 
 
 authorName1: Benjamin Wootton
-authorTitle1: Founder & CTO, Ensemble
+authorTitle1: Founder & CTO, Jetstream
 authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 --- 
@@ -24,17 +24,19 @@ import Article from 'layouts/Article.astro';
 
 <Article data={frontmatter}>
 
-Historically, enterprise data and analytics systems have been built around batch processing.  This involves collecting new data into batches which are then processed on an hourly or daily schedule.  As data often has to move between multiple systems, this can mean that users receive their data on dashboards or reports a significant amount of time after the original business event took place.  
+Historically, enterprise data and analytics systems have been built around batch processing.  This involves collecting new data into batches which are then processed on a periodic schedule.  As data often has to move between multiple systems, this can mean that users receive their data on dashboards or reports a significant amount of time after the original business event took place.  
 
-Increasingly, businesses want to move beyond this and make use of their data in real-time.  They realise that the earlier they can react to their business data, the sooner they can extract value from it and use it to drive their customer and employee experience in differentiated ways.  
+Increasingly, businesses want to move beyond this and make use of their data in real-time and operational scenarios.  They realise that the earlier they can react to their business data, the sooner they can extract value from it and use it to drive their customer and employee experience in differentiated ways.  
 
 Unfortunately, moving from batch to streaming and real-time analytics is a significant leap.  The entire way in which we collect, transform, store, query and display information needs to be updated to work with a continuous stream of data as opposed to infrequent batches.  Not only is this model more technically complex, it also requires new technology and new programming models.  
 
 ## Why ClickHouse?
 
-A real-time analytics platform requires different technical approaches from the moment that data is created till when it is acted upon or rendered on a screen.  However, at the heart of that, there needs to be a datastore which can rapidly ingest and process data, and then serve online interactive queries with high performance.   
+A real time analytics platform requires different technical approaches from the moment that data is created till when it is acted upon or rendered on a screen.  However, at the heart of the system, there needs to be a datastore which can rapidly ingest and process data, and then serve online interactive queries over fresh data with high performance.   
 
-Though there are many databases and data warehouses on the market, ClickHouse is arguably the highest performing analytical database available.  Yes, benchmarks are notoriously tricky, controversial and situational dependent, but ClickHouse is widely acknowledged as being extremely performant, especially when working with logs, events and time series type data that we are typically interested in for real-time analytics work. 
+Though there are many databases and data warehouses on the market, ClickHouse is arguably the highest performing analytical database available for solving this particular challenge.  
+
+Yes, benchmarks are notoriously tricky, controversial and situational dependent, but ClickHouse is widely acknowledged as being extremely performant, especially when working with logs, events and time series type data that we are typically interested in for real-time analytics work. 
 
 Beyond it's raw performance, ClickHouse also incorporates a number of features which make it particularly appropriate for real time analytics workloads.  For instance:
 
