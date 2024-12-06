@@ -8,6 +8,8 @@ import Blog from "components/Blog.astro";
 
 // Assets
 import carStreamsImage from 'assets/home/car-streams.jpg';
+import cityImage from 'assets/insights/38.jpg';
+
 ---
 
 <Page
@@ -15,7 +17,6 @@ import carStreamsImage from 'assets/home/car-streams.jpg';
 	description="We help businesses design, build and run sophisticated real time analytics solutions based on ClickHouse, the fastest open source database in the market."
 >
 
-    <div id="what-we-do" />
 
     <Hero>
         <h1>We Build Real Time Analytics Solutions Powered By ClickHouse</h1>
@@ -23,6 +24,10 @@ import carStreamsImage from 'assets/home/car-streams.jpg';
         <Button text="See Our Work" href="/insights/" />
     </Hero>
 
+
+
+    <div id="what-we-do" />
+    
     <Cards
         cards={[
             {
@@ -48,7 +53,7 @@ import carStreamsImage from 'assets/home/car-streams.jpg';
 
     <Cards
         black
-        image={carStreamsImage}
+        image={cityImage}
         cards={[
             {
                 title: 'It’s Fast',

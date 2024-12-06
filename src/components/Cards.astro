@@ -32,11 +32,13 @@ interface Props {
             </div>
 
             {image &&
-                <Picture
-                    src={image}
-                    alt={imageAlt ? imageAlt : ''}
-                    class="mt-8"
-                />
+                <div class="mt-8 h-[400px] overflow-hidden">
+                    <Picture
+                        src={image}
+                        alt={imageAlt ? imageAlt : ''}
+                        class="object-cover object-center w-full h-[800px] -mt-[200px]"
+                    />
+                </div>
             }
         </div>
 

@@ -13,7 +13,17 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  text-size-adjust: 100%;
+  font-feature-settings: 'kern' 1, 'liga' 1;
   font-family: 'Poppins', 'Poppins Fallback', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Add subpixel antialiasing for high DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  :root {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
 }
 
 /* Poppins font - Regular */

@@ -81,14 +81,14 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
     >
 
         <div class="text-center">
-            <h3>Send a Message</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus.</p>
+            <h3>Let's Start The Conversation</h3>
+            <p>Please email us or complete the form below.  Someone will be in touch promptly.</p>
         </div>
 
         <input type="hidden" name="access_key" value="494835c2-57fc-40d2-8599-e3a509841384">
 
         <label>
-            Question Type*
+            Question Type
             <select class={inputStyle} required>
                 <option value="Question Type" disabled selected>Question Type</option>
                 <option value="General Inquiry">General Inquiry</option>
@@ -100,23 +100,23 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
 
         <div class="md:flex md:gap-4">
             <label class="flex-[1]">
-                Your Name*
+                Your Name
                 <input class={inputStyle} placeholder="Your Name" type="text" name="Your Name" required>
             </label>
 
             <label class="flex-[1]">
-                Your Company*
+                Your Company
                 <input class={inputStyle} placeholder="Your Company" type="text" name="Your Company" required>
             </label>
 
             <label class="flex-[1]">
-                Your Email*
+                Your Email
                 <input class={inputStyle} placeholder="Your Email" type="email" name="Your Email" required>
             </label>
         </div>
 
         <label>
-            Comment*
+            Your Comment
             <textarea class={inputStyle} placeholder="Type your comment" name="Comment" required rows={5} />
         </label>
 
@@ -129,7 +129,7 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
             </label>
 
             <Button 
-                text="Sent Message"
+                text="Send Message"
                 button
                 insertClass="!block !m-0 hover:bg-[#ea864b]"
             />
