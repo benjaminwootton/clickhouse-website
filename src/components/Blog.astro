@@ -9,7 +9,7 @@ type ImageModule = {
 
 // Import dynamically
 const postsImport = await import.meta.glob('../pages/insights/*.mdx', { eager: true });
-const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
+const postImages = await import.meta.glob<ImageModule>('../assets/insights/featured_images/*.{jpg,jpeg,png,webp}', { eager: true });
 let filteredPosts = [];
 
 // Sort posts by date (most recent first)
@@ -99,7 +99,7 @@ const activeStyle = `bg-white`
         <ul id="posts-container" class="m-0 list-none grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8">
             {filteredPosts?.map((loop: any, i: number) => {
                 // Find the corresponding image using the image path from frontmatter
-                const imagePath = `../assets/insights/${loop.frontmatter.featured_image}`;
+                const imagePath = `../assets/insights/featured_images/${loop.frontmatter.featured_image}`;
                 const imageModule = postImages[imagePath];
 
                   // Convert the date string to a Date object
