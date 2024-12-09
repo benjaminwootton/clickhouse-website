@@ -28,7 +28,7 @@ In this article we are going to demonstrate how we can use [PeerDB](https://peer
 
 ### Why Postgres and ClickHouse?
 
-Many data teams use ClickHouse to complement Postgres.  Typically, they start with Postgres as their transactional application database, but over time find that the analytical elements of their user experience slow down.  To combat this, they decide to add a separate OLAP database more suited to analytics and often land on ClickHouse.  
+Many data teams use ClickHouse to complement Postgres.  Typically, they start with Postgres as their transactional application database, but over time find that the analytical elements of their user experience slow down or place too much load onto their database.  To combat this, they decide to add a separate OLAP database more suited to analytics and often land on ClickHouse.  
 
 Having decided on Postgres and ClickHouse, the next task is to integrate data between the two on an ongoing basis.   Though there are many tools to do this, including [Debezium](https://debezium.io/), [AirByte](https://airbyte.io/) and [Fivetran](https://fivetran.com/), it is worth giving due consideration to the lesser known PeerDB which is well suited to this stack. 
 
@@ -36,15 +36,19 @@ We say this for two reasons:
 
 Firstly, where many of the ETL tools have a wide range of connectors, PeerDB chose to focus exclusively on Postgres as a data source.  This focus means that they have been able to build one of the fastest and most scalable CDC solutions for Postgres, whilst also supporting it's advanced features such as it's complex data types and partitioned tables.
 
-Secondly, in July 2024 [ClickHouse acquired PeerDB](https://clickhouse.com/blog/clickhouse-acquires-peerdb-to-boost-real-time-analytics-with-postgres-cdc-integration) to make integrating Postres and ClickHouse easier.  With PeerDB under the ClickHouse umbrella, the integration between the two is deepening.  For instance, a [private preview of PeerDB integrated inside ClickHouse cloud is now available](https://clickhouse.com/blog/postgres-cdc-connector-clickpipes-private-preview).  This means that PeerDB is the strategic choice when working with these two technologies.
+Secondly, in July 2024 [ClickHouse acquired PeerDB](https://clickhouse.com/blog/clickhouse-acquires-peerdb-to-boost-real-time-analytics-with-postgres-cdc-integration) to make integrating Postres and ClickHouse easier.  With PeerDB under the ClickHouse umbrella, the integration between the two is deepening such as the [private preview of PeerDB that has been integrated into ClickHouse cloud](https://clickhouse.com/blog/postgres-cdc-connector-clickpipes-private-preview).  This means that PeerDB is the strategic and obvious choice when working with these two technologies.
 
 ### How PeerDB Works 
 
 PeerDB is responsible for taking data from a Postgres source (including both open source and managed versions such as AWS RDS and Google Cloud) and copying the data into a target data warehouse, in our case ClickHouse.  
 
-It will integrate all inserts, updates and deletes that occur against selected source tables and can run continuously and in near real-time.   This means that we can maintain a copy of selected and relevant data in ClickHouse which should accurately mirror the source table at any given time.
+It will integrate all inserts, updates and deletes that occur against selected source tables and can run continuously and in near real-time.   This means that we can maintain a copy of selected and relevant data in ClickHouse which should accurately mirror the Postgres source table at any given time.
 
-The two main mechanisms for integrated data.  Firstly, we have CDC (Change Data Capture), where PeerDB will listen to a log of low level change events from Postgres.  Secondly, there is a SQL Query Based integration where we can select a subset of rows and do joins and transformations prior to the integration.  The latter relies on some ID or timestamp to monitor which rows have been synced in each batch and would typically add more load onto the source database than the CDC approach so is arguably less preferred.   
+There are two main mechanisms for integrating data.  
+
+Firstly, we have CDC (Change Data Capture), where PeerDB will listen to a log of low level change events from Postgres.  
+
+Secondly, there is a SQL Query Based integration which gives us the option of specifying our source as a SQL query, this giving us the option of selecting a subset of rows and potentially doing joins and transformations at source.  This requires some ID or timestamp to monitor which rows have been synced in each batch and would typically add more load onto the source database than the CDC approach so is arguably less preferred.   
 
 Additional [transformations can be applied directly within PeerDB](https://blog.peerdb.io/row-level-transformations-in-postgres-cdc-using-lua) as data moves between the two systems.  This can keep load off the databases and support use cases such as removing sensitive data or unnesting JSON during the ETL process.
 
@@ -54,7 +58,7 @@ PeerDB exposes a UI and a SQL interface to control and monitor it's configuratio
 
 ### Setting Up The Integration With PeerDB Open Source
 
-We won't repeat all of the [PeerDB documentation here](https://docs.peerdb.io/quickstart/quickstart) as the QuickStart guide is clear.  However, there are four steps:
+We won't repeat all of the [PeerDB documentation here](https://docs.peerdb.io/quickstart/quickstart) as the QuickStart guide is clear.  However, these are the steps at a high level:
 
 - Run the PeerDB QuickStart process outlined at the link to clone the Docker compose file and startup scripts onto your server;
 
@@ -62,11 +66,35 @@ We won't repeat all of the [PeerDB documentation here](https://docs.peerdb.io/qu
 
 - Run the run-peerdb.sh script to start the PeerDB services;
 
-- Access the PeerDB UI, configure the source and target peer details, then configure a mirror to integrate the two peers.
+- Access the PeerDB UI, configure the source (Postgres) and target (ClickHouse) peer connection details;
+
+- Configure a mirror to integrate the two peers.
 
 At this point, if everything is configured correctly, PeerDB should begin moving data between the two databases for your selected tables.  You can monitor the status of the replication process in the UI or logs.
 
-If you need to create any test data in Postgres for testing, you can use the following technique:
+### Source Table In Postgres
+
+The QuickStart guide creates a Postgres database called _source_ which contains a table called _test_.  We can use that to initially experiment with PeerDB.
+
+```
+source=# \d+ test
+                                              Table "public.test"
+ Column |  Type   | Collation | Nullable |           Default            | Storage  | Stats target | Description
+--------+---------+-----------+----------+------------------------------+----------+--------------+-------------
+ id     | integer |           | not null | generated always as identity | plain    |              |
+ c1     | integer |           |          |                              | plain    |              |
+ c2     | integer |           |          |                              | plain    |              |
+ t      | text    |           |          |                              | extended |              |
+Indexes:
+    "test_pkey" PRIMARY KEY, btree (id)
+Publications:
+    "peerflow_pub_main"
+Access method: heap
+```
+
+### Generating Test Data
+
+If you need to create any test data in Postgres, you can use the following technique:
 
 ```
 insert into test ( c1, c2 ) 
