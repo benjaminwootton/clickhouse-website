@@ -21,6 +21,7 @@ import InformationEmbed from 'components/InformationEmbed.astro'
 import Article from 'layouts/Article.astro';
 import { Picture } from 'astro:assets';
 import clickpipespostgrescdc  from 'assets/insights/clickpipespostgrescdc.png';
+import peerdbgui from 'assets/insights/peerdbgui.png'
 
 <Article data={frontmatter}>
 
@@ -28,33 +29,47 @@ In this article we are going to demonstrate how we can use [PeerDB](https://peer
 
 ### Why Postgres and ClickHouse?
 
-Many data teams use ClickHouse to complement Postgres.  Typically, they start with Postgres as their transactional application database, but over time find that the analytical elements of their user experience slow down or place too much load onto their database.  To combat this, they decide to add a separate OLAP database more suited to analytics and often land on ClickHouse.  
+Many data teams use ClickHouse to complement Postgres.  Typically, they start with Postgres as their transactional application database, but over time find that the analytical elements of their user experience slow down.  To combat this, they decide to add a separate OLAP database more suited to analytics and often land on ClickHouse.  
 
 Having decided on Postgres and ClickHouse, the next task is to integrate data between the two on an ongoing basis.   Though there are many tools to do this, including [Debezium](https://debezium.io/), [AirByte](https://airbyte.io/) and [Fivetran](https://fivetran.com/), it is worth giving due consideration to the lesser known PeerDB which is well suited to this stack. 
 
 We say this for two reasons:
 
-Firstly, where many of the ETL tools have a wide range of connectors, PeerDB chose to focus exclusively on Postgres as a data source.  This focus means that they have been able to build one of the fastest and most scalable CDC solutions for Postgres, whilst also supporting it's advanced features such as it's complex data types and partitioned tables.
+Firstly, where many of the ETL tools have a wide range of connectors, PeerDB chose to focus exclusively on Postgres as a data source.  This focus means that they have been able to build one of the [fastest and most scalable CDC solutions for Postgres](https://docs.peerdb.io/why-peerdb), whilst also supporting it's advanced features such as it's complex data types and partitioned tables.
 
 Secondly, in July 2024 [ClickHouse acquired PeerDB](https://clickhouse.com/blog/clickhouse-acquires-peerdb-to-boost-real-time-analytics-with-postgres-cdc-integration) to make integrating Postres and ClickHouse easier.  With PeerDB under the ClickHouse umbrella, the integration between the two is deepening such as the [private preview of PeerDB that has been integrated into ClickHouse cloud](https://clickhouse.com/blog/postgres-cdc-connector-clickpipes-private-preview).  This means that PeerDB is the strategic and obvious choice when working with these two technologies.
 
 ### How PeerDB Works 
 
-PeerDB is responsible for taking data from a Postgres source (including both open source and managed versions such as AWS RDS and Google Cloud) and copying the data into a target data warehouse, in our case ClickHouse.  
+PeerDB is responsible for taking data from a Postgres source (including both open source and managed versions such as AWS RDS and Google Cloud) and reliably copying it into a target data warehouse, in our case ClickHouse.  
 
 It will integrate all inserts, updates and deletes that occur against selected source tables and can run continuously and in near real-time.   This means that we can maintain a copy of selected and relevant data in ClickHouse which should accurately mirror the Postgres source table at any given time.
 
-There are two main mechanisms for integrating data.  
-
-Firstly, we have CDC (Change Data Capture), where PeerDB will listen to a log of low level change events from Postgres.  
-
-Secondly, there is a SQL Query Based integration which gives us the option of specifying our source as a SQL query, this giving us the option of selecting a subset of rows and potentially doing joins and transformations at source.  This requires some ID or timestamp to monitor which rows have been synced in each batch and would typically add more load onto the source database than the CDC approach so is arguably less preferred.   
-
-Additional [transformations can be applied directly within PeerDB](https://blog.peerdb.io/row-level-transformations-in-postgres-cdc-using-lua) as data moves between the two systems.  This can keep load off the databases and support use cases such as removing sensitive data or unnesting JSON during the ETL process.
+[Transformations can be applied within PeerDB](https://blog.peerdb.io/row-level-transformations-in-postgres-cdc-using-lua) as data moves between the two systems, defined using a simple scripting language.  This can keep load off the databases and support use cases such as removing sensitive data or unnesting JSON during the ETL process.
 
 Architecturally, PeerDB is a set of standalone services which are usually ran through Docker Compose.  It could potentially be ran in Kubernetes for additional scale. 
 
 PeerDB exposes a UI and a SQL interface to control and monitor it's configuration and behaviour.  
+
+<Picture src={peerdbgui} alt="" />
+
+### CDC vs SQL Integration
+
+There are two options for sourcing data from your Postgres database.  
+
+Firstly, we have CDC (Change Data Capture), where PeerDB will listen to a log of low level change events emitted from Postgres and replicate them to ClickHouse.  
+
+Secondly, there is a SQL Query Based integration which gives us the option of specifying our source dataset as a SQL query.  This allows you to do things like select a subset of rows from the table, carry out joins across multiple source tables and apply other transformations at source.  
+
+The latter would typically add more load onto the source database than the CDC approach so is arguably less preferred.   With a fast analytical database like ClickHouse it may be better to do that kind of work within ClickHouse away from your production transactional database.
+
+### Open Source vs ClickHouse Cloud
+
+We have two options for deploying PeerDB.
+
+The first is to use the open source PeerDB tools and run it in a self hosted configuration.  
+
+The second is to use the fully managed version which is deployed embedded into ClickHouse Cloud as a private preview.
 
 ### Setting Up The Integration With PeerDB Open Source
 
@@ -74,7 +89,7 @@ At this point, if everything is configured correctly, PeerDB should begin moving
 
 ### Source Table In Postgres
 
-The QuickStart guide creates a Postgres database called _source_ which contains a table called _test_.  We can use that to initially experiment with PeerDB.
+The QuickStart guide creates a Postgres database called _source_ which contains a table called _test_.  We can use that to initially experiment with PeerDB by mirroring it into ClickHouse.
 
 ```
 source=# \d+ test
@@ -94,7 +109,7 @@ Access method: heap
 
 ### Generating Test Data
 
-If you need to create any test data in Postgres, you can use the following technique:
+If you need to create any test data in Postgres, you can use the following technique.  Start by creating 10 rows in the test table:
 
 ```
 insert into test ( c1, c2 ) 
@@ -103,7 +118,7 @@ select random()::float * 1000, random()::float * 10000 from generate_series( 1, 
 
 ### How Is Data Represented In ClickHouse 
 
-The data should be represented in ClickHouse as a single table matching the PeerDB configuration.  Columns for the sync time, the deleted flag and the peerdb version are added automatically by PeerDB:
+The data should be represented in ClickHouse as a single table matching the Postgres table.  Columns for the sync time, the deleted flag and the peerdb version are added automatically by PeerDB:
 
 ```
 SELECT *
@@ -126,7 +141,7 @@ By default, PeerDB will create a ReplacingMergeTree table in ClickHouse.  This i
 
 ### Updates and Deletes
 
-If you update a row, a new row is created in your ClickHouse target table.  If you choose a ReplacingMergeTree, the new row will effectively replace the old row giving you update semantics in your target table.  
+If you update a row in Postgres, a new row is created in your ClickHouse target table.  If you stick with the ReplacingMergeTree, the new row will effectively replace the old row giving you update semantics in your target table.  
 
 ```
 SELECT *
@@ -148,7 +163,7 @@ Query id: 190cd6d5-92ea-4ca2-8bfc-9d52f349299c
 Peak memory usage: 3.06 MiB.
 ```
 
-Deletes in Postgres are sent into the target with a peerdb_is_deleted column set to 1, replicating a logical delete.  You would therefore need to handle the fact that the record is logically deleted either in your downstream ClickHouse views, reports or applications.  
+Deletes in Postgres are sent into the target with a peerdb_is_deleted column set to 1, replicating a logical delete.  You would therefore need to handle the fact that the record is only logically deleted either in your downstream ClickHouse views, reports or applications.  
 
 ```
 SELECT *
@@ -172,7 +187,7 @@ Peak memory usage: 2.14 MiB.
 
 ### Schema Evolution
 
-If you add a column on your source table, this is automatically reflected in ClickHouse at the point that the next record is integrated.  In the example below, we have added a new column c4 into Postgres, and found this to be created in ClickHouse with a default value:
+If you add a column onto your source table, this is automatically reflected in ClickHouse at the point that the next record is integrated.  In the example below, we have added a new column c4 into Postgres, and found this to be created in ClickHouse with a default value:
 
 ```
 SELECT *
@@ -200,26 +215,36 @@ Please note that even though the new column is integrated, ClickHouse schema evo
 
 There are a few gotchas when runnning the open source stack which slowed us down with getting started.
 
-The first is related to the MiniIO Configuration.  PeerDB takes data from Postgres and puts it in a staging area before it is loaded into ClickHouse.  By default this staging area is hosted in a [MinIO](https://min.io/) container.  It is important to set the hostname which both PeerDB and ClickHouse can access in the docker compose file.  By default it is set to host.docker.internal in the docker-compose file which will not be accessible to ClickHouse.
+The first is related to the MiniIO Configuration.  PeerDB takes data from Postgres and puts it in a staging area before it is loaded into ClickHouse.  By default this staging area is hosted in a [MinIO](https://min.io/) container which runs inside of the PeerDB Docker compose stack.  It is important to set the hostname to an endpoint which both PeerDB and ClickHouse can access in the docker compose file.  From this:
+
+```
+PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_ENDPOINT_URL_S3: http://host.docker.internal:9001
+```
+
+To this:
 
 ```
 PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_ENDPOINT_URL_S3: http://172.31.26.57:9001
 ```
 
-Secondly, we experienced a number of issues relating to Docker Snap on Ubuntu.  This included containers in Docker compose not being able to connect to each other, and not being able to write to our external EBS volume with more disk.  
+Secondly, we experienced a number of issues relating to Docker Snap on Ubuntu.  This included containers in Docker compose not being able to connect to each other, and not being able to write to our external EBS volume with more disk.  Ensure that you have setup Docker following the instructions on their website.
 
 Aside from this, the Open Source PeerDB version was relatively easy to deploy and run.
 
 ### Cloud Hosted Solution 
 
-PeerDB has now been integrated into ClickHouse Cloud, though as of December 2024, you still need to request access to the private preview via support.
+PeerDB has now been integrated into ClickHouse Cloud, though as of December 2024, you still need to [request access to the private preview via support](https://clickhouse.com/cloud/clickpipes/postgres-cdc-connector).
 
-The process for creating the link is similar to the open source UI.  You create a ClickPipe associated with your ClickHouse Cloud instance and select the Postgres CDC option.  You can then specify the details for your source database, choose an area within your ClickHouse Cloud instance to write to.
+The process for configuring the peers and the mirror are similar to the PeerDB Open Source UI.  You create a ClickPipe associated with your ClickHouse Cloud instance and select the Postgres CDC option.  You can then specify the details for your source database, choose an area within your ClickHouse Cloud instance to write to and run through the process.
 
 It is also possible to monitor the running process in the Cloud UI.  You will see your process moving through the initial snapshot through to the stream processing.
 
 <Picture src={clickpipespostgrescdc} alt="" />
 
 The user interface is very similar to the open source version, but has been nicely integrated into the ClickHouse Cloud UI.  
+
+### Conclusion 
+
+Though there are various options for ETL and CDC, PeerDB is now the natural choice for integrating Postgres and ClickHouse.  The Open Source tool is very easy to setup, and the integration with ClickHouse cloud gives you the ability to run PeerDB for free with no need for configuration, hosting or self management.  
 
 </Article>
