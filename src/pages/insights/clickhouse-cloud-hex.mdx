@@ -1,0 +1,67 @@
+---
+title: ClickHouse Cloud And Hex Are A Great Stack For Analytics And Data Science
+date_published: 2023-12-08T00:15:46.000Z
+date_updated: 2023-12-08T00:15:46.000Z
+order: 116
+image: /x.jpg
+featured_image: 96.jpg
+background_color: 
+    - "#DF6B9C"
+    - "#E74C68"
+tag: General
+featured_posts: 17,28,19,20
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import InformationEmbed from 'components/InformationEmbed.astro'
+import Article from 'layouts/Article.astro';
+
+<Article data={frontmatter}>
+
+ClickHouse Cloud and Hex are fast becoming our preferred stack for doing data analytics and data science.  
+
+Together, they provide a fully managed data stack with a highly collaborative, polyglot development experience. 
+
+In this walkthrough video, we demonstrate how the two can be used together and the how they combine to offer a very lightweight, pragmatic, cost effective but nonetheless powerful environment.   
+ 
+<div class="hex-embed">
+<iframe width="100%" src="https://www.youtube.com/embed/nXFfVN6JpL0?si=qEyO-XFKPmyEeU5j" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+
+### Video Transcript
+
+<InformationEmbed title="The following transcript was automatically generated"></InformationEmbed>
+
+Hey there. In this video I wanted to talk through what is quickly becoming one of our preferred tech stacks for doing analytics and data science workloads against Clickhouse.
+
+Now essentially we make heavy use of a tool called HEX which is a cloud-based notebook environment where data teams can work together to analyze their data using SQL or Python. 
+
+Now, I'm a big fan of a platform called Databricks. I realize that half of the reason why I like Databricks so much is due to its development experience. It's notebook-based, collaborative, and supports polyglot languages, among other features. A similar value proposition is offered by two tools: Clickhouse Cloud and HEX. They are fully managed, cloud-based data platforms with an excellent development experience on top.
+
+So, let's start this demo by looking at the data directly within Clickhouse Cloud. We're going to focus on a dataset known as the UK property price paid dataset. This dataset is essentially a list of property transactions in the UK, including details like the price, date of transaction, location, and other relevant information. Initially, we'll query the dataset in Clickhouse Cloud to get a feel for it. Though there are multiple millions of rows, we'll start by pulling the whole dataset and then cancel it. We'll then perform an aggregation by town and property type (like terraced, semi-detached, detached, or other) to find the average price for each category.
+
+Next, we'll transfer this query into one of our HEX notebooks. In this analysis, we found that properties categorized as 'other' in Gatwick are the most expensive in the UK. This is an important insight to keep in mind moving forward.
+
+In the HEX environment, we can see that it consists of various workspaces, each potentially having many contributing team members. In these notebooks, anyone can contribute code or visualize the results. Notebooks also transition through different statuses as they evolve from development to production. Looking at the data sources section, we can see the integration with Clickhouse Cloud, which is straightforward, involving a host, port, username, and password.
+
+Now, let’s create a new HEX notebook to connect and analyze the data in our Clickhouse cloud account. We start with an empty notebook, and on the left, we have the schema of Clickhouse cloud. It’s important in these collaborative environments to add descriptions, outlining the narrative, steps, and findings. So, we begin with a simple title and introduction, explaining that we'll analyze the prices paid for properties in the UK.
+
+Starting with a basic select query against the UK price paid table, we confirm connectivity by pulling back the first 10 rows. To deepen our analysis, we take the aggregation designed in Clickhouse Cloud and input it into HEX. HEX allows us to chain cells and query the results of previous cells, avoiding complex SQL structures like CTEs. We name each output, making the data frames accessible for subsequent queries.
+
+One observation is the exceptionally high average prices in certain categories, like the £28 million average for 'other' properties in Gatwick. Suspecting these to be commercial properties, we decide to filter them out to focus on residential properties. This adjustment reduces our dataset but provides more realistic figures, like the £1.4 million average for detached properties in Virginia Water.
+
+Further refining our analysis, we limit the dataset to the top five towns. HEX maintains a dependency graph between cells, allowing efficient updating and re-computation of results when any cell is modified. This feature is particularly useful for interactive and ad hoc analyses.
+
+Adding narrative to the notebook is a best practice, as it helps describe the thought process and steps involved. HEX also offers basic business intelligence and dashboarding capabilities. For instance, we can visualize the top five most expensive towns in a bar chart. HEX’s polyglot notebooks enable the combination of SQL and Python, allowing for a seamless transition between data querying and more complex analysis, like pivoting data or applying Python libraries.
+
+Another key feature of HEX is its application feature, which allows the creation of dashboards and low-code interactive apps. These can be published for use by business users, with options for access control and caching to optimize performance. Interactive elements like buttons, checkboxes, and dropdowns can be added to enhance user engagement and data exploration.
+
+In conclusion, this combination of Clickhouse Cloud and HEX offers a powerful, pragmatic, and cost-effective stack for analytics and data science. It's a fully managed cloud environment with nothing to configure. The flexibility of the HEX environment supports collaboration among data engineers, scientists, analysts, and business users. It facilitates the entire development process, from exploratory analysis to publishing. The ability to deploy interactive dashboards and low-code apps may eliminate the need for more complex tools, making this technology stack highly efficient for companies looking to analyze their data with high performance.
+
+I'll leave it there. If you'd like to learn more about how this could look in your environment, please reach out. I'm happy to have an informal conversation about whether this stack would meet your needs. Thank you.
+
+</Article>
