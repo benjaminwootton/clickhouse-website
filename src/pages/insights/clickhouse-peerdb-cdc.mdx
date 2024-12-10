@@ -30,7 +30,7 @@ In this article we are going to demonstrate how we can use [PeerDB](https://peer
 
 We will discuss both a self hosted open source stack and two fully managed solutions using [PeerDB Cloud](https://peerdb.io/) and [ClickHouse Cloud](https://clickhouse.com).   
 
-### Why Postgres and ClickHouse?
+## Why Postgres and ClickHouse?
 
 Many data teams use ClickHouse to complement Postgres.  Typically, they begin with Postgres as their transactional application database. Over time, however, they find that the analytical components of their user experience slow down. To address this issue, they add a separate OLAP database better suited for analytics and ClickHouse is often the database of choice.
 
@@ -40,7 +40,7 @@ First, unlike many ETL tools that aim to support a broad range of connectors, Pe
 
 Second, in July 2024, [ClickHouse acquired PeerDB](https://clickhouse.com/blog/clickhouse-acquires-peerdb-to-boost-real-time-analytics-with-postgres-cdc-integration). Since then, the integration between the two platforms has deepened, including the [private preview of PeerDB integrated into ClickHouse Cloud](https://clickhouse.com/blog/postgres-cdc-connector-clickpipes-private-preview). This strategic alignment makes PeerDB the strategic choice when working with Postgres and ClickHouse.
 
-### How PeerDB Works 
+## How PeerDB Works 
 
 PeerDB is responsible for taking data from a Postgres source database and reliably copying it into a target data warehouse, in our case ClickHouse.  
 
@@ -76,7 +76,6 @@ Finally, you can use a fully managed version which is integrated and embedded in
 
 Though PeerDB isn't too tricky to setup and operate, having it deployed and ran for you is one less thing to worry about.  We therefore tend towards one of the hosted options.  
 
-
 ### Setting Up The Integration With PeerDB Open Source
 
 We will begin with a runthrough as to how to self manage PeerDB open source and introduce some of the core concepts.
@@ -95,7 +94,7 @@ We won't repeat all of the [PeerDB documentation here](https://docs.peerdb.io/qu
 
 At this point, if everything is configured correctly, PeerDB should be ready to move data from Postgres to ClickHouse for your selected tables.  You can monitor the health of the peers and the mirrors through the UI.
 
-### Source Table In Postgres
+## Source Table In Postgres
 
 The QuickStart guide creates a Postgres database called __source__ which contains a table called __test__.  
 
@@ -263,7 +262,7 @@ It is also possible to monitor the running process in the Cloud UI.  You will se
 
 The user interface is very similar to the open source version, but has been nicely integrated into the ClickHouse Cloud UI.  
 
-### Conclusion 
+## Conclusion 
 
 Postgres and ClickHouse are highly complementary technologies for transactional and analytical workloads.  
 
