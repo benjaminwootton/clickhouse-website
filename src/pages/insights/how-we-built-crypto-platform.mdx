@@ -1,0 +1,100 @@
+---
+title: How We Built A Crypto Analytics Platform Based On ClickHouse
+date_published: 2024-10-12T10:43:24.000Z
+date_updated: 2024-10-12T10:50:37.000Z
+order: 10
+image: /x.jpg
+featured_image: 21.jpg
+background_color:
+  - '#DF6B9C'
+  - '#E74C68'
+tag: ClickHouse
+featured_posts: 1,2,3,4
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Ensemble
+authorImage1: /images/users/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import Article from 'layouts/Article.astro';
+
+<Article data={frontmatter}>
+
+One of our most significant projects with ClickHouse involved developing an analytics platform for Crypto and Web3 data.
+
+The aim of the project was to be able to apply complex analytics to data captured from Ethereum and EVM compatible blockchains in order to support risk management and trading requirements.
+
+The solution had 3 main requirements:
+
+Firstly, as it is by far too slow and expensive to query blockchains directly, our initial task was to take data from the various blockchains and projects and move it into a local datastore so that it could be analysed efficiently and cost effectively.
+
+Once retrieved, the next task was to create a suite of analytics over the data to explain what was happening with certain DeFi/Web3 projects. These projects were built based on smart contracts to implement capabilities such as DeFi loans and synthetic derivatives.
+
+Finally, these analytics would be exposed through an interactive GUI which would allow users to filter, aggregate and visualise the base data and analytics as needed.
+
+This was not a one-off task. Instead, the solution would have to continually run and ingest data in a streaming fashion and make the derived analytics available in a relatively short amount of time and with high availability and robustness.
+
+## Why We Chose ClickHouse
+
+We chose ClickHouse as our core datastore due to it's ability and strength in working large event based datasets. This included query and ingestion performance, and it's ability to achieve good compression metrics whilst subsequently impacting performance.
+
+Beyond this, we were also happy to go with ClickHouse due to it's open source nature, it's simplicity of operation, and the fact that SQL could be used to transform and query data.
+
+## Sourcing The Data
+
+We used [Infura](https://infura.io) as our gateway to access blockchain data. Infura run and manage nodes for the various blockchains, and offer an API where you can query historical data and subscribe to streaming updates. As Blockchain nodes require lots of memory and storage and are a project in themselves, we were happy to pay for this gateway as a managed service.
+
+Extracting data from Web3 projects involves interacting with their smart contracts. The interface into smart contracts is defined within a format called ABI, which needs to be processed in order to extra data from the blockchain and decode it into a useable format. The projects themselves often share their ABI files, or they can be found on blockchain explorers such as [Etherscan](https://etherscan.io/).
+
+Our approach was to write a seperate service which was responsible for interacting with Infura based on requests configured by the user. The service would take these requests and either execute batch downloads or form streaming subscriptions to the blockchain node to continually receive updates as new blocks are published.
+
+To make communication with Infura easier, we used an open source library called [Truffle](https://trufflesuite.com/). Truffle can take an ABI file and produce a node.js API for interacting with the smart contract and decoding it's transactions.
+
+## Ingesting Data Into ClickHouse
+
+The data was downloaded by our bespoke service and pushed into a Kafka cluster. This was a 3 node cluster for resilience and scaling purposes.
+
+The data was then consumed by ClickHouse directly from Kafka using the Kafka Table Engine, and placed into a raw table ready for processing.
+
+## Transforming Data
+
+Though ClickHouse is good for querying raw and unprocessed data, in this instance the data that is returned from blockchains is very low level and certainly needs a degree of cleansing and pre-processing before it can be usefully used.
+
+We also wanted to break down the data into derived tables to clean it and make it easier to consume. This was data warehousing and ETL type work but was necessary in our case.
+
+With this in mind, our next task was to take the raw data and incrementally transform it.
+
+Though we had a requirements for working with big data and low latency queries, there was not a real-time requirement. With this in mind, we decided to use dbt to define and run our transformation models as batch.
+
+Using dbt with ClickHouse [isn't always a straightforward decision](/blog/combining-dbt-and-clickhouse), but in this case, the software engineering benefits and collaborative approach of dbt won out over defining the transformations for instance as materialised views.
+
+## Analytcal GUI
+
+Finally, we wanted to expose our analytics to users.
+
+As is often the case, we found that dashboarding tools are too inflexible for the user experience that we wanted. As such, we went down the route of using [Dash](https://plotly.com/) by Plotly to build our visualisations and interactive tools.
+
+Our approach was to perform as much as the analytics in ClickHouse as possible, for instance calculating moving averages and daily trading volumes. This kept the visualisation layer as thin as possible. However, where we did need to include Python business logic to calculate a metric, this was easily integrated into Dash.
+
+## Overall Result
+
+The end result was a success.
+
+Within minutes, an analyst can request that new blockchain data is pulled into the ClickHouse database. They can begin analysing that data directly within ClickHouse, starting with the most recent first, whilst the historic data back-fills.
+
+There would then be some development work to cleanly transform the data using dbt scripts. As this was plain SQL and did not require access to ClickHouse, this was a fairly collaborative exercise which included pull requests for code review and automated testing to ensure data quality.
+
+The architecture of using Dash to build our analytics front-end works well. The pattern of leaning on ClickHouse transformations to derive analytics and keep the visualiastion layer thin is a good principle.
+
+Overall we found ClickHouse aand dbt great solution for working with Crypto and Web3 data and will continue to use these patterns on future projects.
+
+## Open Source
+
+Though this is not our production code, we have been able to open source the front-end of one of our early proof of concepts of this architecture. This is the Dash application which is designed to connect to a ClickHouse backend. The code can be found [in this repo](https://github.com/ensembleanalytics/clickhouse-crypto-dashboard) and screenshots can be found below.
+
+<img src="/images/blog/timeflow-crypto-2.png" alt="" />
+<img src="/images/blog/timeflow-crypto-3.png" alt="" />
+<img src="/images/blog/timeflow-crypto-4.png" alt="" />
+
+</Article>
