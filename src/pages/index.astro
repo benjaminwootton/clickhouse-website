@@ -8,20 +8,24 @@ import Blog from "components/Blog.astro";
 
 // Assets
 import carStreamsImage from 'assets/home/car-streams.jpg';
+import cityImage from 'assets/insights/featured_images/38.jpg';
+
 ---
 
 <Page
-    title="We Build Real Time Analytics Solutions Based On ClickHouse"
+    title="jetstream | Real Time Analytics Solutions Based On ClickHouse"
 	description="We help businesses design, build and run sophisticated real time analytics solutions based on ClickHouse, the fastest open source database in the market."
 >
 
-    <div id="what-we-do" />
 
     <Hero>
-        <h1>We Build Real Time Analytics Solutions Based On ClickHouse</h1>
-        <p>We help businesses design, build and run sophisticated real time analytics solutions powered by ClickHouse, the fastest open source database in the market.</p>
-        <Button text="See Our Work" href="#why-clickhouse" />
+        <h1>Real Time Analytics Powered By ClickHouse</h1>
+        <p>We help businesses design, build and run real time analytics solutions powered by ClickHouse, the fastest open source database in the market.</p>
     </Hero>
+
+
+
+    <div id="what-we-do" />
 
     <Cards
         cards={[
@@ -40,15 +44,15 @@ import carStreamsImage from 'assets/home/car-streams.jpg';
             }, 
         ]}
     >
-        <h2>Expert Consultancy and Managed Services For ClickHouse</h2>
+        <h2>Expert Consultancy and Managed Services</h2>
         <p>We help clients leverage <a href="https://clickhouse.com">ClickHouse Cloud</a> and <a href="https://github.com/ClickHouse/ClickHouse">ClickHouse Open Source</a> as the engine for their data and analytics ambitions.  Our skills span cloud data engineering, data science and software engineering, deploying end to end solutions that help our clients with their most demanding analytics requirements.  </p>
-    </Cards>>
+    </Cards>
 
     <div id="why-clickhouse" />
 
     <Cards
         black
-        image={carStreamsImage}
+        image={cityImage}
         cards={[
             {
                 title: 'It’s Fast',
@@ -62,13 +66,13 @@ import carStreamsImage from 'assets/home/car-streams.jpg';
             }, 
         ]}
     >
-        <h2>Why You Should Build Your Next Analytics Project With ClickHouse</h2>
-        <p>Most data and analytics platforms cannot scale to serve real time analytics and customer experiences over high volumes of freshly ingested data.  ClickHouse is unique in it’s ability to do this at a cost effective price point.  With the fully managed <a href="https://clickhouse.com">ClickHouse Cloud</a> and the flexibility of an <a href="https://github.com/ClickHouse/ClickHouse">Open Source</a> deployment model, ClickHouse is uniquely differentiated in the market.</p>
+        <h2>Why Build Your Next Analytics Project With ClickHouse</h2>
+        <p>Most databases cannot scale to serve real time analytics and customer facing workloads over high volumes of freshly ingested data.  ClickHouse is unique in it’s ability to do this at a cost effective price point.  With the fully managed <a href="https://clickhouse.com">ClickHouse Cloud</a> and the flexibility of an <a href="https://github.com/ClickHouse/ClickHouse">Open Source</a> deployment, ClickHouse is uniquely differentiated.</p>
     </Cards>
 
     <Blog maxAmountOfPosts={3}>
         <h2>Our Thought Leadership And Resources</h2>
-        <p>We actively share our knowledge and learnings in how we operate and extract value from ClickHouse based on our work with some of the most innovative and demanding use cases.  Please visit our <a href="/insights">insights<a> section to learn more.</p>
+        <p>We actively share our knowledge and learnings in how we operate and extract value from ClickHouse based on our work with some of the most innovative and demanding use cases.  Please visit our <a href="/insights">insights section</a> to learn more.</p>
     </Blog>
     
 </Page>

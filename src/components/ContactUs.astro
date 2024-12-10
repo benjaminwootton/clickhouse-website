@@ -9,9 +9,9 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
 <section class="wrapper flex gap-8 lg:gap-10 lg:flex-row flex-col mt-12">
     <div class="flex-[1]">
         <h2>Get In Touch</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus. Pellentesque vel imperdiet lectus. Aenean pharetra maximus vulputate. </p>
-    
-        <a href="mailto:hello@ensembleai.io" class="no-underline flex gap-3 mt-9">
+        <p>Though we are based in Dubai, we are a globally distributed team who work with global clients.</p>
+
+        <a href="mailto:bw@benjaminwootton.com" class="no-underline flex gap-3 mt-9">
             <img
                 src="/images/icons/email-black.svg"
                 alt="Email us"
@@ -22,7 +22,7 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
             >
             <div>
                 <p class="m-0 font-bold">Email</p>
-                <p class="m-0">hello@ensembleai.io</p>
+                <p class="m-0">bw@benjaminwootton.com</p>
             </div>
         </a>
 
@@ -81,14 +81,14 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
     >
 
         <div class="text-center">
-            <h3>Send a Message</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus.</p>
+            <h3>Let's Start The Conversation</h3>
+            <p>Get in touch with the team.</p>
         </div>
 
         <input type="hidden" name="access_key" value="494835c2-57fc-40d2-8599-e3a509841384">
 
         <label>
-            Question Type*
+            Question Type
             <select class={inputStyle} required>
                 <option value="Question Type" disabled selected>Question Type</option>
                 <option value="General Inquiry">General Inquiry</option>
@@ -100,23 +100,23 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
 
         <div class="md:flex md:gap-4">
             <label class="flex-[1]">
-                Your Name*
+                Your Name
                 <input class={inputStyle} placeholder="Your Name" type="text" name="Your Name" required>
             </label>
 
             <label class="flex-[1]">
-                Your Company*
+                Your Company
                 <input class={inputStyle} placeholder="Your Company" type="text" name="Your Company" required>
             </label>
 
             <label class="flex-[1]">
-                Your Email*
+                Your Email
                 <input class={inputStyle} placeholder="Your Email" type="email" name="Your Email" required>
             </label>
         </div>
 
         <label>
-            Comment*
+            Your Comment
             <textarea class={inputStyle} placeholder="Type your comment" name="Comment" required rows={5} />
         </label>
 
@@ -129,7 +129,7 @@ const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full te
             </label>
 
             <Button 
-                text="Sent Message"
+                text="Send Message"
                 button
                 insertClass="!block !m-0 hover:bg-[#ea864b]"
             />

@@ -32,11 +32,13 @@ interface Props {
             </div>
 
             {image &&
-                <Picture
-                    src={image}
-                    alt={imageAlt ? imageAlt : ''}
-                    class="mt-8"
-                />
+                <div class="mt-8 lg:h-[400px] overflow-hidden">
+                    <Picture
+                        src={image}
+                        alt={imageAlt ? imageAlt : ''}
+                        class="object-cover object-center w-full lg:h-[800px] lg:-mt-[200px]"
+                    />
+                </div>
             }
         </div>
 
@@ -51,7 +53,7 @@ interface Props {
                             <img
                                 src={loop.image}
                                 alt={loop.imageAlt ? loop.imageAlt : ''}
-                                class="mb-4 object-fit"
+                                class="hidden md:block mb-4 object-fit"
                                 width="48"
                                 height="48"
                             />

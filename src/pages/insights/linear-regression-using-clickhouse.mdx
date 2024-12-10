@@ -1,10 +1,11 @@
 ---
 title: Linear Regression Using Clickhouse Machine Learning Functions
-date_published: 2023-11-06T14:06:16.000Z
-date_updated: 2023-11-06T14:39:30.000Z
+date_published: 2024-07-11
+date_updated: 2024-07-11
 order: 12
 image: /x.jpg
-featured_image: 26.jpg
+featured_image: 114.jpg
+description: Using functions integrated into ClickHouse to implement a linear regression.
 background_color:
     - "#DF6B9C"
     - "#E74C68"
@@ -12,14 +13,13 @@ tag: General
 featured_posts: 23,25,26,29,30
 
 authorName1: Benjamin Wootton
-authorTitle1: Founder & CTO, Ensemble
+authorTitle1: Founder & CTO, Jetstream
 authorImage1: /assets/authors/benjamin-wootton.jpg
 authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
 ---
 
 import InformationEmbed from 'components/InformationEmbed.astro'
 import Article from 'layouts/Article.astro';
-
 
 <Article data={frontmatter}>
 
@@ -66,19 +66,15 @@ Peak memory usage: 723.95 KiB.
 
 Using our [Hex Notebook](https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/hex/9206f58c-0bde-4dae-94d7-aa9379773d84/draft/logic), we can easily render a heatmap of the delivery locations around Jilin, observing that more deliveries occur in central areas:
 
-<Html>
 <div class="hex-embed">
 <iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=319ff4bb-ffb2-4010-82ac-13075454903a" ></iframe>
 </div>
-</Html>
 
 Our model will also take account of the pickup time as a second variable.  Therefore, we will also visualise the distribution of the number of orders by pickup hour and can observe that most packages are collected at 8am in the morning.
 
-<Html>
 <div class="hex-embed">
 <iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=298a62ee-1656-407a-a058-6983ba2a2ae7" ></iframe>
 </div>
-</Html>
 
 ## Data Preparation
 
@@ -134,11 +130,9 @@ from
 
 When visualised, delivery distance and delivery time are positively correlated with greater variance as journeys get longer.  This is intuitively as we would expect as longer journeys become harder to predict.
 
-<Html>
 <div class="hex-embed">
 <iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=fb21ea51-595e-481a-9a2d-57d41813ffb9" ></iframe>
 </div>
-</Html>
 
  ## Model Training 
 
@@ -235,12 +229,9 @@ Peak memory usage: 2.28 MiB.
 
 We can also plot these visually as per below in our notebook:
 
-
-<Html>
 <div class="hex-embed">
 <iframe width="800" height="600" frameborder="0" src="https://app.hex.tech/d83ae9cc-7cbe-40f3-9899-0c348f283047/app/9206f58c-0bde-4dae-94d7-aa9379773d84/latest?embedded=true&embeddedStaticCellId=045a07eb-700b-4814-a8a9-2fd83e1a3fc5" ></iframe>
 </div>
-</Html>
 
 To explain the plot, if the model was performing perfectly, then we would expect PREDICTED and ACTUAL to match in every case, meaning that all points would line up on the orange curve.  In reality, our model did have errors which we will now analyse.
 

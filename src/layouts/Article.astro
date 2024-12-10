@@ -38,8 +38,8 @@ const publishedDate = publishedObject.toLocaleDateString('en-US', {
 type ImageModule = {
     default: ImageMetadata;
 };
-const postImages = await import.meta.glob<ImageModule>('../assets/insights/*.{jpg,jpeg,png,webp}', { eager: true });
-const imagePath = `../assets/insights/${data.featured_image}`;
+const postImages = await import.meta.glob<ImageModule>('../assets/insights/featured_images/*.{jpg,jpeg,png,webp}', { eager: true });
+const imagePath = `../assets/insights/featured_images/${data.featured_image}`;
 const imageModule = postImages[imagePath];
 
 const linkedInIcon = `

@@ -5,27 +5,28 @@ const nav = [
     { name: 'Insights', href: '/insights/' },
     { name: 'Contact', href: '/contact/' },
 ];
+
+const pathname = new URL(Astro.request.url).pathname;
 ---
 
 <header
     class="
-        py-3 fixed top-0 left-0 w-full z-10 transition-all duration-500
+        py-[20px] fixed top-0 left-0 w-full z-50 transition-all duration-200
         [&.scrolled.scrolling-down]:translate-y-[-6rem] [&.scrolled]:bg-black
         [&.header-open_nav]:block [&.header-open_.open-menu]:hidden [&.header-open_.close-menu]:block
     "
     id="header"
 >
     <div class="wrapper flex justify-between items-center">
-        <div class="">
+        <div class="w-[140px] md:w-[200px]">
             <a href="/">
                 <img
                     src="/images/clickhouse-logo.svg"
-                    class="w-full"
+                    class="w-full h-auto"
                     alt="ClickHouse logo"
                     loading="eager"
                     fetchpriority="high"
-                    width="60"
-                    height="60"
+                    width="150"
                 />
             </a>
         </div>
@@ -33,21 +34,22 @@ const nav = [
         <nav class="
             hidden md:block fixed top-[4.2rem] left-0 w-full pt-4
             min-h-[100vh] max-h-[calc(100vh-4.2rem)] bg-black md:bg-transparent overflow-auto
-            md:min-h-[0] md:top-none md:static md:overflow-visible md:pt-0
+            md:min-h-[0] md:top-none md:static md:overflow-visible md:pt-[10px]
         ">
             <ul class="
                 list-none flex flex-col gap-6 md:gap-10 md:flex-row flex-wrap m-0
                 justify-end items-center
             ">
                 {nav.map((loop) => (
-                    <li>
+                    <li class="min-w-[80px] text-center">
                         <a
                             href={loop.href}
-                            class="
+                            class={`
                                 text-white
                                 no-underline text-[0.9375rem]
-                                hover-underline-effect
-                            "
+                                hover-underline-effect font-medium
+                                ${pathname === loop.href || (pathname.startsWith(loop.href) && loop.href !== '/') ? 'font-semibold' : ''}
+                            `}
                         >
                             {loop.name}
                         </a>
