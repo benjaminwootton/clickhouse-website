@@ -32,9 +32,23 @@
         oldScroll = currentScroll;
     }
 
+    // Close the menu when anchor links are clicked
+    function closeMenuOnAnchorClick(event) {
+        const isExpanded = menuButton.getAttribute('aria-expanded') === "true";
+        if (isExpanded) {
+            toggleMenu();  // Close the menu
+        }
+    }
+
     if (menuButton) {
         menuButton.addEventListener('click', toggleMenu);
     }
+
+    // Add event listeners to all anchor links in the header
+    const anchorLinks = header.querySelectorAll('a');
+    anchorLinks.forEach(link => {
+        link.addEventListener('click', closeMenuOnAnchorClick);
+    });
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 })();
