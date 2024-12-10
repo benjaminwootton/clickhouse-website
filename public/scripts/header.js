@@ -1,30 +1,40 @@
-const header = document.getElementById("header");
-const body = document.body;
+(function() {
+    const header = document.getElementById("header");
+    const menuButton = document.getElementById("menu-button");
+    const body = document.body;
+    let oldScroll = 0;
 
-// Mobile menu toggle
-document.addEventListener('DOMContentLoaded', () => {
-    const menuButton = document.getElementById('menu-button');
-
-    menuButton.addEventListener('click', () => {
-        const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
-        menuButton.setAttribute('aria-expanded', !isExpanded);
-        header.classList.toggle('header-open');
-    });
-});
-
-// Header scroll logic
-window.onscroll = function (e) {
-    if (this.oldScroll < this.scrollY) {
-        header.classList.add('scrolling-down');
-    } else {
-        header.classList.remove('scrolling-down');
+    // Menu toggle logic
+    function toggleMenu() {
+        const isExpanded = menuButton.getAttribute('aria-expanded') === "true";
+        
+        menuButton.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+        body.classList.toggle('popup-active', !isExpanded);
+        
+        requestAnimationFrame(() => {
+            header.classList.toggle('header-open', !isExpanded);
+        });
     }
 
-    if (this.scrollY > 75) {
-        header.classList.add('scrolled');
-    } else {
-        header.classList.remove('scrolled');
+    // Scroll behaviour logic
+    function handleScroll() {
+        const currentScroll = window.scrollY;
+
+        // Toggle scrolling-down class based on scroll direction
+        header.classList.toggle('scrolling-down', currentScroll > oldScroll);
+
+        // Toggle scrolled classes based on scroll position
+        const isScrolled = currentScroll > 150;
+        header.classList.toggle('scrolled', isScrolled);
+        body.classList.toggle('scrolled', isScrolled);
+
+        // Update oldScroll for next comparison
+        oldScroll = currentScroll;
     }
 
-    this.oldScroll = this.scrollY;
-}
+    if (menuButton) {
+        menuButton.addEventListener('click', toggleMenu);
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+})();
