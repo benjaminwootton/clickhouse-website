@@ -2,38 +2,7 @@
 ---
 
 <style>
-    @keyframes float {
-        0% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
-        }
-        33% {
-            transform: translate(60px, -60px) rotate(3deg) scale(1.05);
-        }
-        66% {
-            transform: translate(-50px, 50px) rotate(-2deg) scale(0.95);
-        }
-        100% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
-        }
-    }
-
-    .gradient-blob {
-        animation: float 8s ease-in-out infinite;
-        transform-origin: center;
-    }
-
-    .gradient-blob:nth-child(1) { animation-delay: -1s; }
-    .gradient-blob:nth-child(2) { animation-delay: -2s; }
-    .gradient-blob:nth-child(3) { animation-delay: -3s; }
-    .gradient-blob:nth-child(4) { animation-delay: -4s; }
-    .gradient-blob:nth-child(5) { animation-delay: -5s; }
-    .gradient-blob:nth-child(6) { animation-delay: -6s; }
-
     @media (max-width: 768px) {
-        .gradient-blob {
-            transform: scale(1.5);
-        }
-        
         svg {
             top: 0% !important;
             left: -50% !important;
@@ -74,23 +43,23 @@
             </defs>
 
             <g opacity="0.85">
-                <path class="gradient-blob" d="M747.269 1301.92C556.617 1414.44 667.831 1617.53 747.269 1705C877.711 1705 1143.93 1678.56 1165.29 1572.81C1191.99 1440.62 1479.79 1454.95 1423.79 1316.9C1367.79 1178.85 1194.59 1246.57 1294.22 1058.38C1393.84 870.19 832.567 855.212 832.567 963.959C832.567 1072.71 985.584 1161.27 747.269 1301.92Z" 
+                <path d="M747.269 1301.92C556.617 1414.44 667.831 1617.53 747.269 1705C877.711 1705 1143.93 1678.56 1165.29 1572.81C1191.99 1440.62 1479.79 1454.95 1423.79 1316.9C1367.79 1178.85 1194.59 1246.57 1294.22 1058.38C1393.84 870.19 832.567 855.212 832.567 963.959C832.567 1072.71 985.584 1161.27 747.269 1301.92Z" 
                     fill="#C026D3" filter="url(#blur-filter0)" transform="translate(-400 0)" />
                 
-                <path class="gradient-blob" d="M1355 886.5L1820 557V1494L894.5 1514L1176.5 1284L1355 886.5Z" 
+                <path d="M1355 886.5L1820 557V1494L894.5 1514L1176.5 1284L1355 886.5Z" 
                     fill="#4F46E5" filter="url(#blur-filter1)" transform="translate(-200 100)" />
                 
-                <g class="gradient-blob" style="mix-blend-mode: color;">
+                <g style="mix-blend-mode: color;">
                     <path d="M982.809 829.378L630.625 623.745L448.866 876.719L471.755 1173.91L806.688 1186.76L982.809 829.378Z" 
                         fill="#06B6D4" filter="url(#blur-filter2)" transform="translate(-300 0)" />
                     
-                    <path class="gradient-blob" d="M1423.52 848.501C1637.54 835.797 1555.91 1159.52 1488.34 1322.97L1499.31 1330.85L1181.49 1977.99C1070.28 1957.4 811.382 1867.23 665.501 1671.29C483.149 1426.37 1155.99 864.381 1423.52 848.501Z" 
+                    <path d="M1423.52 848.501C1637.54 835.797 1555.91 1159.52 1488.34 1322.97L1499.31 1330.85L1181.49 1977.99C1070.28 1957.4 811.382 1867.23 665.501 1671.29C483.149 1426.37 1155.99 864.381 1423.52 848.501Z" 
                         fill="#0EA5E9" filter="url(#blur-filter3)" transform="translate(-500 -100)" />
                     
-                    <path class="gradient-blob" d="M1048.66 1358.03C1103.94 1244.08 852.966 694.099 720.567 433.355L868.976 300.491C921.543 404.136 1065.2 639.723 1219.31 752.912C1411.95 894.398 979.566 1500.48 1048.66 1358.03Z" 
+                    <path d="M1048.66 1358.03C1103.94 1244.08 852.966 694.099 720.567 433.355L868.976 300.491C921.543 404.136 1065.2 639.723 1219.31 752.912C1411.95 894.398 979.566 1500.48 1048.66 1358.03Z" 
                         fill="#E879F9" filter="url(#blur-filter4)" transform="translate(-200 50)" />
                     
-                    <path class="gradient-blob" d="M836.648 1641.12C779.613 1751.35 455.357 1472.86 300.358 1319.83C397.024 1185.29 606.203 898.783 669.589 829.071C748.822 741.931 837.023 1087.9 897.476 1211.99C957.929 1336.07 712.462 1276.69 669.909 1362.48C627.356 1448.27 907.942 1503.33 836.648 1641.12Z" 
+                    <path d="M836.648 1641.12C779.613 1751.35 455.357 1472.86 300.358 1319.83C397.024 1185.29 606.203 898.783 669.589 829.071C748.822 741.931 837.023 1087.9 897.476 1211.99C957.929 1336.07 712.462 1276.69 669.909 1362.48C627.356 1448.27 907.942 1503.33 836.648 1641.12Z" 
                         fill="#F43F5E" filter="url(#blur-filter5)" transform="translate(-300 -50)" />
                 </g>
             </g>

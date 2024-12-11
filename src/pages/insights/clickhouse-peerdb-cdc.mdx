@@ -54,7 +54,7 @@ PeerDB exposes a UI and a SQL interface to control and monitor it's configuratio
 
 <Picture src={peerdbgui} alt="" />
 
-### CDC vs SQL Integration
+## CDC vs SQL Integration
 
 There are two options for integrating Postgres and ClickHouse which are referred to as CDC and Streaming Queries.  
 
@@ -76,7 +76,7 @@ Finally, you can use a fully managed version which is integrated and embedded in
 
 Though PeerDB isn't too tricky to setup and operate, having it deployed and ran for you is one less thing to worry about.  We therefore tend towards one of the hosted options.  
 
-### Setting Up The Integration With PeerDB Open Source
+## Setting Up The Integration With PeerDB Open Source
 
 We will begin with a runthrough as to how to self manage PeerDB open source and introduce some of the core concepts.
 
@@ -116,7 +116,7 @@ Publications:
 Access method: heap
 ```
 
-### Generating Test Data
+## Generating Test Data
 
 To create synthetic test data in Postgres you can use the following technique.  Begin by creating 10 rows in the test table:
 
@@ -224,7 +224,7 @@ Dropping a column in your source table does not remove it from ClickHouse, but s
 
 Please note that even though the new column is integrated, ClickHouse schema evolution is [not explicitly documented as being supported](https://docs.peerdb.io/features/schema-changes) so tread carefully when updating your source tables!
 
-### Gotchas When Running An Open Source Stack
+## Gotchas When Running An Open Source Stack
 
 There are a few gotchas when runnning the open source stack which slowed us down with getting started.
 
@@ -244,7 +244,7 @@ Secondly, we experienced a number of issues relating to Docker Snap on Ubuntu.  
 
 Aside from these gotchas, the Open Source PeerDB version was relatively easy to deploy and run and we found a single instance to be scalable to millions of rows with low latency.  
 
-### Cloud Hosted Solution 
+## Cloud Hosted Solution 
 
 As mentioned, we have two options for a managed solution as of December 2024.  The first is [PeerDB Cloud](https://peerdb.io) and the second is to use [ClickHouse Cloud](https://clickhouse.com) which now integrates PeerDB to enable it's Postgres CDC solution.  
 
