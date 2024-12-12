@@ -9,5 +9,8 @@ import mdx from '@astrojs/mdx';
 export default defineConfig({
   site: "https://clickhouse.com/",
   output: 'static',    
-  integrations: [tailwind(), react(), sitemap(), mdx()]
+  integrations: [tailwind(), react(), sitemap(), mdx()],
+  vite: {
+    assetsInclude: ['**/*.pdf']
+  }
 });

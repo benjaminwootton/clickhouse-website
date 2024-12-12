@@ -1,0 +1,110 @@
+---
+// Components
+import Header from 'components/Layout/Header.astro';
+import Footer from 'components/Layout/Footer.astro';
+import Seo from 'components/Layout/Seo.astro';
+import HeroSmall from 'components/HeroSmall.astro';
+import { Picture } from 'astro:assets';
+import Authors from 'components/Authors.astro';
+import PdfForm from 'components/PdfForm.astro';
+
+// Styles
+import 'styles/Global.scss';
+
+interface Props {
+    data: {
+        title: string;
+        description: string;
+        noindex?: boolean;
+        date_published: string,
+        authorName1?: string,
+        authorImage1?: string,
+        authorLinkedIn1?: string,
+        authorName2?: string,
+        authorImage2?: string,
+        authorLinkedIn2?: string,
+        featured_image?: string,
+        report_cover_image?: string,
+        report_file?: string,
+    },
+    pdf: string,
+}
+
+const { data, pdf } = Astro.props;
+
+// Get cover image
+type ImageModule = {
+    default: ImageMetadata;
+};
+
+const featuredImages = await import.meta.glob<ImageModule>('../assets/reports/featured_images/*.{jpg,jpeg,png,webp}', { eager: true });
+const featuredImagePath = `../assets/reports/featured_images/${data.featured_image}`;
+const thisPostFeaturedImage = featuredImages[featuredImagePath];
+
+const coverImages = await import.meta.glob<ImageModule>('../assets/reports/report_covers/*.{jpg,jpeg,png,webp}', { eager: true });
+const featuredCoverImagePath = `../assets/reports/report_covers/${data.report_cover_image}`;
+const thisPostCoverImage = coverImages[featuredCoverImagePath];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<Seo
+			title={data.title + ' – ClickHouse'}
+			description={data.description}
+			noindex={data.noindex}
+		/>
+	</head>
+	<body>
+
+		<Header />
+
+		<main>
+            <article>
+                <HeroSmall>
+                    <h1>{data.title}</h1>
+                    <p>{data.description}</p>
+                </HeroSmall>
+
+                <div class="flex gap-10 lg:flex-row flex-col wrapper mt-[4rem] mb-[5rem] items-start">
+
+                    <div class="
+                        [&_img]:rounded-xl flex-[1.5]
+                        [&_h2]:mt-10 [&_h3]:mt-8 [&_.astro-code]:my-8 [&_iframe]:my-8 [&_img]:my-8
+                        [&_.astro-code]:p-6 [&_.astro-code]:rounded-xl [&_.astro-code]:!bg-black
+                        [&_iframe]:max-w-full
+                    ">
+                        {thisPostFeaturedImage?.default &&
+                            <Picture
+                                src={thisPostFeaturedImage.default}
+                                alt={data.title}
+                                loading="eager"
+                                class="!mt-0"
+                            />
+                        }
+
+                        <slot />
+                    </div>
+
+                    <div class="flex-1 bg-[#e6eaf5] rounded-xl">
+                        {thisPostCoverImage?.default &&
+                            <Picture
+                                src={thisPostCoverImage.default}
+                                alt={data.title}
+                                loading="lazy"
+                                class="max-w-[18.75rem] mx-auto w-[80%] mt-[2rem]"
+                            />
+                        }
+
+                        <Authors data={data} report />
+
+                        <PdfForm pdf={pdf} />
+                    </div>
+                </div>
+            </article>
+		</main>
+
+		<Footer />
+
+	</body>
+</html>

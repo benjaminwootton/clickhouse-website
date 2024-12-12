@@ -1,0 +1,114 @@
+---
+interface Props {
+    pdf: string,
+}
+
+import Button from "components/Button.astro";
+
+const { pdf } = Astro.props;
+
+const inputStyle = `block rounded-[0.5rem] bg-white p-4 text-base mt-2 w-full text-base
+    border-[1px] border-[#CECFD5]`
+---
+
+<form 
+    class="
+        [&_label]:py-3 [&_label]:block [&_label]:text-sm
+        bg-light-blue py-6 px-6
+    "
+    action="https://api.web3forms.com/submit"
+    method="POST"
+    id="download-form"
+    data-pdf={pdf}
+>
+
+    <div class="text-center border-t-[1px] border-[#fff] py-8 mb-[-2rem]">
+        <h3>Tell Me More</h3>
+        <p>Download details about this service.</p>
+    </div>
+
+    <input type="hidden" name="access_key" value="494835c2-57fc-40d2-8599-e3a509841384">
+    <input id="page-url" type="text" name="URL" hidden style="display: none;" />
+
+    <label>
+        First Name <span class="text-[#c62d33]">*</span>
+        <input class={inputStyle} placeholder="First Name" type="text" name="First Name" required>
+    </label>
+
+    <label>
+        Last Name <span class="text-[#c62d33]">*</span>
+        <input class={inputStyle} placeholder="Last Name" type="text" name="Last Name" required>
+    </label>
+
+    <label>
+        Company Name <span class="text-[#c62d33]">*</span>
+        <input class={inputStyle} placeholder="Your Company Name" type="text" name="Your Company Name" required>
+    </label>
+
+    <label>
+        Company Email <span class="text-[#c62d33]">*</span>
+        <input class={inputStyle} placeholder="Your Company Email" type="email" name="Company Email" required>
+    </label>
+
+    <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
+    <label class="!flex gap-2 items-start">
+        <input type="checkbox" class="mt-1" name="Accept Terms & Conditions Of Use" required>
+        By clicking "Download Now" you agree to receive occassional marketing emails from Ensemble.
+    </label>
+
+    <Button 
+        text="Download Now"
+        button
+        insertClass="!block !m-[1rem] px-12 py-[1rem] text-base !mx-auto hover:bg-[#ea864b]"
+    />
+</form>
+
+<script is:inline>
+    document.getElementById('page-url').value = window.location.href;
+    
+    document.getElementById('download-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const pdfFile = form.getAttribute('data-pdf');
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.open(pdfFile, '_blank');
+
+                // Create thank you message element
+                const thankYouMessage = document.createElement('div');
+                thankYouMessage.innerHTML = `
+                    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                        <div class="bg-white p-8 rounded-lg text-center max-w-md shadow-xl">
+                            <h2 class="text-2xl font-bold mb-4 text-orange">Download started</h2>
+                            <button id="close-thank-you" class="bg-black text-white px-6 py-2 rounded">Close</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Add to body
+                document.body.appendChild(thankYouMessage);
+                
+                // Clear form
+                form.reset();
+                
+                // Close button functionality
+                document.getElementById('close-thank-you').addEventListener('click', () => {
+                    document.body.removeChild(thankYouMessage);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error submitting your form. Please try again.');
+        });
+    });
+</script>

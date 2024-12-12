@@ -1,0 +1,109 @@
+---
+interface Props {
+    data: {
+        authorName1?: string,
+        authorImage1?: string,
+        authorLinkedIn1?: string,
+        authorName2?: string,
+        authorImage2?: string,
+        authorLinkedIn2?: string,
+    },
+    report?: boolean,
+}
+
+const { data, report } = Astro.props;
+
+const linkedInIcon = `
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="${report ? 'black' : 'white'}" d="M3.24608 11.0515H1.06639V4.04364H3.24608V11.0515ZM2.14452 3.10614C1.46483 3.10614 0.902329 2.5202 0.902329 1.81708C0.902329 1.13739 1.46483 0.57489 2.14452 0.57489C2.84764 0.57489 3.41014 1.13739 3.41014 1.81708C3.41014 2.5202 2.84764 3.10614 2.14452 3.10614ZM11.3789 11.0515H9.22264V7.65302C9.22264 6.8327 9.1992 5.80145 8.0742 5.80145C6.9492 5.80145 6.78514 6.66864 6.78514 7.5827V11.0515H4.60545V4.04364H6.69139V5.00458H6.71483C7.01952 4.46552 7.72264 3.87958 8.77733 3.87958C10.9805 3.87958 11.4023 5.3327 11.4023 7.2077V11.0515H11.3789Z"/>
+    </svg>
+`
+---
+
+{data.authorName1 &&
+    <div class={`
+        my-8 flex justify-center items-center gap-3 md:gap-6 flex-col
+        ${!report ? 'md:flex-row' : ''}
+    `}>
+        <div class={`
+            relative max-w-max flex items-center gap-3 rounded-full py-2 px-4
+            ${report ? 'bg-[#fff]' : 'bg-[#1e1a20]'}
+        `}>
+            {(
+                data.authorImage1 === '/images/authors/benjamin-wootton.jpg' 
+                ||
+                data.authorImage1 === '/assets/authors/benjamin-wootton.jpg'
+            ) ?
+                <picture>
+                    <source srcset="/images/authors/benjamin-wootton.webp" type="image/webp" />
+                    <img 
+                        src={data.authorImage1}
+                        alt={data.authorName1}
+                        width="40"
+                        height="40"
+                        class="rounded-full object-cover w-[40px] h-[40px]"
+                        loading="eager"
+                    />
+                </picture>
+                :
+                data.authorName1 ? 
+                <img 
+                    src="/images/authors/benjamin-wootton.jpg"
+                    alt={data.authorName1}
+                    width="40"
+                    height="40"
+                    class="rounded-full object-cover w-[40px] h-[40px]"
+                    loading="eager"
+                />
+                :
+                ''
+            }
+            <p class="m-0">{data.authorName1}</p>
+            {data.authorLinkedIn1 &&
+                <a
+                    href={data.authorLinkedIn1}
+                    set:html={linkedInIcon}
+                    aria-label="LinkedIn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="
+                        min-ww-[12px] max-w-[12px] h-[12px] block
+                        after:absolute after:top-0 after:left-0 after:w-full after:h-full
+                    "
+                />
+            }
+        </div>
+
+        {data.authorName2 &&
+            <div class={`
+                relative max-w-max flex items-center gap-3 rounded-full py-2 px-4
+                ${report ? 'bg-[#fff]' : 'bg-[#1e1a20]'}
+            `}>
+                {data.authorImage2 &&
+                    <img 
+                        src={data.authorImage2}
+                        alt={data.authorName2}
+                        width="40"
+                        height="40"
+                        class="rounded-full object-cover w-[40px] h-[40px]"
+                        loading="eager"
+                    />
+                }
+                <p class="m-0">{data.authorName2}</p>
+                {data.authorLinkedIn2 &&
+                    <a
+                        href={data.authorLinkedIn2}
+                        set:html={linkedInIcon}
+                        aria-label="LinkedIn"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="
+                            min-ww-[12px] max-w-[12px] h-[12px] block
+                            after:absolute after:top-0 after:left-0 after:w-full after:h-full
+                        "
+                    />
+                }
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,52 @@
+---
+title: Develop Your Modern Data & AI Strategy 
+description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras pharetra molestie faucibus. Pellentesque vel imperdiet lectus. Aenean pharetra maximus vulputate. Vivamus non aliquet arcu. Pellentesque mi felis, mollis nec lobortis eget, efficitur vitae lorem. Phasellus consequat, mauris ac venenatis tincidunt, tellus orci sagittis ligula, ac sollicitudin velit mauris ac elit. 
+date_published: 2024-04-22
+date_updated: 2024-04-22
+featured_image: sagemakerinference.png
+
+report_cover_image: cover.png
+
+authorName1: Benjamin Wootton
+authorTitle1: Founder & CTO, Jetstream
+authorImage1: /assets/authors/benjamin-wootton.jpg
+authorLinkedIn1: https://www.linkedin.com/in/benjaminwootton/
+---
+
+import PDF from 'assets/reports/pdf/sample.pdf'; // <---- Replace with the PDF
+
+import Report from 'layouts/Report.astro';
+import { Picture } from 'astro:assets';
+import sagemakerinference from 'assets/reports/featured_images/sagemakerinference.png';
+
+<Report data={frontmatter} pdf={PDF}>
+
+    AI has massive potential in the financial services industry. It can help to automate processes, drive efficiency and enable great employee and customer experiences.
+
+    However, many leaders are asking the question of how to get there. How do you gain quick wins? What technology stack should you use? What skills will be required to harness the opportunity? And how do you do all of this safely and securely?
+
+    We can work with you to develop your own bespoke roadmap for deploying AI in your business. IT will output an actionable roadmap of steps that you can take.
+
+    ## What This Will Deliver
+
+    The strategy will develop an actionable plan for the rapid adoption of AI in your business.
+
+    It includes:
+
+    - Identifying the highest impact areas for the application of AI.
+    - Identifying the highest impact areas for the application of AI.
+    - Understanding where the quick wins are.
+    - An understanding of your current maturity and readiness.
+    - Developing a roadmap for improving your technology, data fundamentals and skills to harness the AI opportunity.
+
+    ## Introducing TBC
+
+    We are TBC, and we help enterprise organisations build and run sophisticated data, analytics and AI systems that drive growth, increase efficiency, enhance their experience and reduce risks.
+
+    We have a particular focus on ClickHouse, the fastest open-source database in the market, which we believe is the fastest best data platform for systems like this.
+
+    Want to learn more? Visit our home page or download our free report that describes the process for implementing advanced analytics in your business.
+
+    <Picture src={sagemakerinference} alt="" />
+
+</Report>
