@@ -4,22 +4,22 @@
 <style>
     @keyframes float {
         0% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
+            transform: none;
         }
         33% {
-            transform: translate(60px, -60px) rotate(3deg) scale(1.05);
+            transform: none;
         }
         66% {
-            transform: translate(-50px, 50px) rotate(-2deg) scale(0.95);
+            transform: none;
         }
         100% {
-            transform: translate(0, 0) rotate(0deg) scale(1);
+            transform: none;
         }
     }
 
     .gradient-blob {
-        animation: float 8s ease-in-out infinite;
-        transform-origin: center;
+        animation: none;
+
     }
 
     .gradient-blob:nth-child(1) { animation-delay: -1s; }
