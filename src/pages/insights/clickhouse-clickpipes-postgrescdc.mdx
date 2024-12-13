@@ -1,5 +1,5 @@
 ---
-title: Integrating Postgres And ClickHouse Using Postgres CDC For ClickPipes
+title: Integrating Postgres And ClickHouse Cloud Using Postgres CDC For ClickPipes
 date_published: 2024-12-09
 date_updated: 2024-12-09
 order: 12
@@ -9,7 +9,7 @@ background_color:
     - "#DF6B9C"
     - "#E74C68"
 tag: General
-description: Why PeerDB is the best solution for integrating data between Postgres and ClickHouse.
+description: Using ClickPipes and Postgres CDC to sync Postgres data to ClickHouse Cloud
 featured_posts: 25,29,30,11
 authorName1: Benjamin Wootton
 authorTitle1: Founder & CTO, 3 Quants
@@ -26,7 +26,7 @@ import clickpipespostgres  from 'assets/insights/clickpipespostgres.png';
 
 <Article data={frontmatter}>
 
-In a [previous article](/clickhouse-peerdb-cdc) we introduced PeerDB, an open source tool which can be used to sync data from Postgres to ClickHouse with low latency and high availability.  If you are unfamiliar with PeerDB, we suggest checking out that article first.  
+In a [previous article](/insights/clickhouse-peerdb-cdc) we introduced PeerDB, an open source tool which can be used to sync data from Postgres to ClickHouse with low latency and high availability.  If you are unfamiliar with PeerDB, we suggest checking out that article first.  
 
 Though PeerDB is an idea solution for a self hosted stack, ClickHouse Cloud has recently integrated PeerDB directly into the product as Postgres CDC under the ClickPipes banner.  
 
@@ -34,7 +34,7 @@ We think this is a big idea and found this to be well implemented.  You can simp
 
 ## Cloud Hosted Solution 
 
-You will need to [request access to the private preview via support](https://clickhouse.com/cloud/clickpipes/postgres-cdc-connector) to enable Postgres CDC in your Cloud account.
+As of December 2024, you will need to [request access to the private preview via support](https://clickhouse.com/cloud/clickpipes/postgres-cdc-connector) to enable Postgres CDC in your Cloud account.
 
 The process for configuring the peers and the mirror are similar to the PeerDB Open Source UI.  You create a ClickPipe associated with your ClickHouse Cloud instance and select the Postgres CDC option.  You can then specify the details for your source database, choose an area within your ClickHouse Cloud instance to write to and run through the process.
 
@@ -48,10 +48,8 @@ The user interface is very similar to the open source version, but has been nice
 
 ## Conclusion 
 
-Postgres and ClickHouse are highly complementary technologies for transactional and analytical workloads.  
+As discussed in the [previous article](/insights/clickhouse-peerdb-cdc), postgres and ClickHouse are highly complementary technologies for transactional and analytical workloads.  
 
-Though there are various options for ETL and CDC between them, PeerDB is now the natural choice considering it's performance and their acquisition by ClickHouse Inc.  
-
-The Open Source tool is very easy to setup, and the deep integration with ClickHouse cloud gives you the ability to run PeerDB for free (as of today) with no need for configuration, hosting or management, making it a compelling choice. 
+The deep integration with ClickHouse cloud gives you the ability to run PeerDB for free (as of today) with no need for configuration, hosting or management, making it a compelling choice. 
 
 </Article>
