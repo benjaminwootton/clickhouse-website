@@ -36,5 +36,17 @@ const { title, description, noindex } = Astro.props;
 
 		<Footer />
 
+		<script src="/scripts/stripe.js" is:inline></script>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const gradientCanvas = document.querySelector('.gradient-canvas');
+            if (gradientCanvas) {
+              // Initialize gradient effect here
+              console.log('Gradient canvas initialized');
+              // Example: gradientCanvas.style.background = 'linear-gradient(to right, #ff7e5f, #feb47b)';
+            }
+          });
+        </script>
+
 	</body>
 </html>
